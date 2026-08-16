@@ -181,9 +181,12 @@
 
     .panel.media img,
     .viewer img {
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      object-position: center;
     }
 
     /* Cover */
@@ -846,12 +849,197 @@
       min-height: 0;
       border: 1px solid var(--border);
       border-radius: 4px;
-      background: #fff;
+      background: #f4f6f9;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 8px;
       overflow: hidden;
+    }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .compare-col {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .compare-col.old { border-color: #e0d2b8; }
+    .compare-col.new { border-color: #b7d9cb; }
+
+    .compare-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      flex-shrink: 0;
+    }
+
+    .compare-col.old .compare-head { background: #faf6ef; }
+    .compare-col.new .compare-head { background: #e7f2ef; }
+
+    .compare-head h3 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .compare-col.old .compare-head h3 { color: #a67c2d; }
+    .compare-col.new .compare-head h3 { color: #12805c; }
+
+    .compare-head span {
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+
+    .compare-col.old .compare-head span {
+      color: #a67c2d;
+      background: #f3ead8;
+    }
+
+    .compare-col.new .compare-head span {
+      color: #12805c;
+      background: #d8ebe3;
+    }
+
+    .compare-col .viewer {
+      border: 0;
+      border-radius: 0;
+      padding: 8px;
+      background: #f4f6f9;
+    }
+
+    .compare-col .viewer img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .case-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: 16px;
+      height: 100%;
+      min-height: 0;
+      transition: grid-template-columns .28s ease;
+    }
+
+    .case-wrap.is-closed {
+      grid-template-columns: 0fr minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .case-drawer {
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .case-drawer .panel {
+      height: 100%;
+    }
+
+    .case-drawer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .case-drawer-bar strong {
+      font-size: 13px;
+      color: var(--brand);
+    }
+
+    .case-drawer-open {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-2);
+      font: inherit;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .case-drawer-close {
+      border: 1px solid var(--brand);
+      background: var(--brand);
+      color: #fff;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .case-drawer-close:hover {
+      background: var(--brand-900);
+      border-color: var(--brand-900);
+    }
+
+    .case-drawer-open:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .case-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .case-main .panel {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #caseSingle {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    #caseSingle img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .case-drawer-open {
+      display: none;
+      align-self: flex-start;
+    }
+
+    .case-wrap.is-closed .case-drawer-open {
+      display: inline-flex;
     }
 
     .defect-note {
@@ -1277,7 +1465,7 @@
 
               <div class="wf-lane bug">
                 <div class="wf-lane-head">
-                  <span class="wf-tag">缺陷修复 · 从乱到准</span>
+                  <span class="wf-tag">缺陷修复 · 从模糊到准确</span>
                   <span class="wf-lane-desc">修缺陷最怕改一处坏三处。先把问题说清楚,让 AI 定位原因并给方案，确认后再改。</span>
                 </div>
                 <div class="wf-track">
@@ -1318,7 +1506,7 @@
               <div class="wf-foot">
                 <div class="wf-foot-label">区别</div>
                 <div class="wf-foot-text">
-                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从乱到准</strong>。需求先<strong>明确边界</strong>，缺陷先<strong>讲清哪里错了</strong>。
+                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从模糊到准确</strong>。需求先<strong>明确边界</strong>，缺陷先<strong>讲清哪里错了</strong>。
                 </div>
               </div>
             </div>
@@ -1383,60 +1571,24 @@
         </div>
       </section>
 
-      <!-- 4 缺陷案例 -->
-      <section class="slide" data-id="defect">
-        <div class="deck">
-          <div class="kicker">4. 案例 · 缺陷修复</div>
-          <h2 class="title">修缺陷：从乱到准的一次实战</h2>
-          <div class="body two">
-            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
-              <div class="tl-item" style="display:block;border:0;padding:0">
-                <div class="tl-step" style="margin-bottom:6px">输入缺陷（现象 + 证据）</div>
-                <pre class="case-prompt">产品名称在产品配置列表里显示异常：期望是跟随系统语言环境显示对应语言的产品名，实际切换语言后仍是默认语言。
-
-复现步骤：登录 → 产品配置 → 产品列表 → 切换语言 → 产品名称未跟随。
-涉及界面与接口响应两处，账号：admin / 测试环境，截图见右侧。</pre>
-              </div>
-              <div class="timeline">
-                <div class="tl-item"><div class="tl-step">描述现象</div><div class="tl-text">期望 vs 实际，一句话说清差距</div></div>
-                <div class="tl-item"><div class="tl-step">贴证据</div><div class="tl-text">截图 + 复现步骤 + 接口响应</div></div>
-                <div class="tl-item"><div class="tl-step">缩小范围</div><div class="tl-text">只改名称映射处，不动列表逻辑</div></div>
-                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换路径，通过</div></div>
-              </div>
-            </div>
-            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
-              <div class="tabs" id="defectTabs">
-                <button type="button" data-ev="scene" class="active">现象</button>
-                <button type="button" data-ev="evidence">证据</button>
-              </div>
-              <div class="viewer">
-                <img id="defectViewer" src="images/07-defect-i18n-product-name.png" alt="缺陷案例配图" data-zoom />
-              </div>
-              <div class="defect-note">现象 → 证据，证据越全定位越快；只改必要处，避免改一处坏三处。</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 5 案例 -->
+      <!-- 4 案例 -->
       <section class="slide" data-id="case">
         <div class="deck">
-          <div class="kicker">5. 案例 · UI 优化</div>
+          <div class="kicker">4. 案例 · UI 优化</div>
           <h2 class="title">UI 优化：按工作流完整跑通</h2>
-          <div class="body two">
+          <div class="body one">
+            <div class="case-wrap" id="caseWrap">
+            <div class="case-drawer">
             <div class="panel" style="display:flex;flex-direction:column;gap:12px;min-height:0">
+              <div class="case-drawer-bar">
+                <strong>输入需求（生成规范 + 原型）</strong>
+                <button type="button" class="case-drawer-close" id="caseDrawerClose">收起提示词</button>
+              </div>
               <div class="tl-item" style="display:block;border:0;padding:0">
-                <div class="tl-step" style="margin-bottom:8px">输入需求（生成规范 + 原型）</div>
-                <pre class="case-prompt">先不要直接改业务代码。请基于产品配置系统现有功能，输出 UI 设计规范 + 可点原型。
+                <pre class="case-prompt">帮我把产品配置系统的 UI 改一下。先别动业务代码，出个设计规范和可点原型给我，确认后再分页落地。
 
-边界：功能语义不变；登录 / 列表 API 与路由不变；只调整展示与交互层级。
-主题色：主色 #00246e；语义色用暗调；不使用蓝紫渐变。
-布局原则：一屏一个白色承载面；不做卡片套卡片；控件圆角 2px、承载面 4px；阴影仅用于浮层。
-页面范围：登录页、用户管理、类目管理、价格管理等核心页。
-登录页：左右分栏（左品牌区 / 右表单），约 960×520；取消大圆角重阴影，改为 4px + 1px 边框。
-列表页：去掉多余标题卡；操作列收敛为「编辑 + 更多」；表格用主题色 hover / 选中态。
-
-先给出 design-spec 与原型，确认后再分模块落地。</pre>
+功能、接口、路由都别变，只调视觉和交互。主色 #00246e，别用蓝紫渐变；圆角小一点，阴影只在浮层用。
+范围就登录、用户管理、类目管理、价格管理这几页。</pre>
               </div>
               <div class="timeline">
                 <div class="tl-item"><div class="tl-step">给出方案</div><div class="tl-text">输出设计规范 + 可点原型</div></div>
@@ -1445,21 +1597,81 @@
                 <div class="tl-item"><div class="tl-step">验收</div><div class="tl-text">功能与视觉走查</div></div>
               </div>
             </div>
+            </div>
+            <div class="case-main">
+            <button type="button" class="case-drawer-open" id="caseDrawerOpen">提示词</button>
             <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
               <div class="tabs" id="caseStageTabs">
-                <button type="button" data-stage="spec" class="active">设计规范</button>
-                <button type="button" data-stage="proto">原型</button>
-                <button type="button" data-stage="final">成品</button>
+                <button type="button" data-stage="design" class="active">规范 / 原型</button>
+                <button type="button" data-stage="compare">新老对比</button>
               </div>
               <div class="tabs" id="casePageTabs">
-                <button type="button" data-page="login" class="active">登录</button>
+                <button type="button" data-page="spec" class="active" id="caseSpecTab">设计规范</button>
+                <button type="button" data-page="login">登录</button>
                 <button type="button" data-page="users">用户管理</button>
                 <button type="button" data-page="category">类目管理</button>
                 <button type="button" data-page="price">价格管理</button>
               </div>
-              <div class="viewer">
+              <div class="viewer" id="caseSingle">
                 <img id="caseViewer" src="images/spec-tokens.png" alt="案例配图" data-zoom />
               </div>
+              <div class="compare" id="caseCompare" style="display:none">
+                <div class="compare-col old">
+                  <div class="compare-head">
+                    <h3>老系统</h3>
+                    <span>改前</span>
+                  </div>
+                  <div class="viewer">
+                    <img id="caseOldImg" src="images/old-users.png" alt="老系统" data-zoom />
+                  </div>
+                </div>
+                <div class="compare-col new">
+                  <div class="compare-head">
+                    <h3>新系统</h3>
+                    <span>改后</span>
+                  </div>
+                  <div class="viewer">
+                    <img id="caseNewImg" src="images/new-users.png" alt="新系统" data-zoom />
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 缺陷案例 -->
+      <section class="slide" data-id="defect">
+        <div class="deck">
+          <div class="kicker">5. 案例 · 缺陷修复</div>
+          <h2 class="title">修缺陷：从模糊到准确的一次实战</h2>
+          <div class="body two">
+            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
+              <div class="tl-item" style="display:block;border:0;padding:0">
+                <div class="tl-step" style="margin-bottom:6px">输入缺陷（现象 + 截图）</div>
+                <pre class="case-prompt">产品名称在产品配置列表里显示异常：期望是跟随系统语言环境显示对应语言的产品名，实际切换语言后仍是默认语言。
+
+复现步骤：登录 → 产品配置 → 产品列表 → 切换语言 → 产品名称未跟随。
+涉及界面与接口响应两处，账号：admin / 测试环境，截图见右侧。</pre>
+              </div>
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-step">描述现象</div><div class="tl-text">期望 vs 实际，一句话说清差距</div></div>
+                <div class="tl-item"><div class="tl-step">贴截图</div><div class="tl-text">截图 + 复现步骤 + 接口响应</div></div>
+                <div class="tl-item"><div class="tl-step">缩小范围</div><div class="tl-text">只改名称映射处，不动列表逻辑</div></div>
+                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换路径，通过</div></div>
+              </div>
+            </div>
+            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
+              <div class="tabs" id="defectTabs">
+                <button type="button" data-ev="scene" class="active">现象</button>
+                <button type="button" data-ev="evidence">截图</button>
+              </div>
+              <div class="viewer">
+                <img id="defectViewer" src="images/07-defect-i18n-product-name.png" alt="缺陷案例配图" data-zoom />
+              </div>
+              <div class="defect-note">现象 → 截图，截图越全定位越快；只改必要处，避免改一处坏三处。</div>
             </div>
           </div>
         </div>
@@ -1560,8 +1772,8 @@
         result: '1 效率',
         workflow: '2 工作流',
         prompt: '3 提示词',
-        defect: '4 案例·缺陷',
-        case: '5 案例·UI',
+        case: '4 案例·UI',
+        defect: '5 案例·缺陷',
         next: '6 展望',
       };
 
@@ -1797,36 +2009,51 @@
       });
 
       const caseGallery = {
-        spec: { tokens: 'images/spec-tokens.png' },
-        proto: {
-          login: 'images/proto-login.png',
+        design: {
+          spec: 'images/spec-tokens.png',
+          login: 'images/new-login.png',
           users: 'images/proto-users.png',
           category: 'images/proto-category.png',
           price: 'images/proto-price.png',
         },
-        final: {
-          login: 'images/final-login.png',
-          users: 'images/final-users.png',
-          category: 'images/final-category.png',
-          price: 'images/final-price.png',
+        compare: {
+          login: { old: 'images/old-login.png', neu: 'images/new-login.png' },
+          users: { old: 'images/old-users.png', neu: 'images/new-users.png' },
+          category: { old: 'images/old-category.png', neu: 'images/new-category.png' },
+          price: { old: 'images/old-price.png', neu: 'images/new-price.png' },
         },
       };
-      let caseStage = 'spec';
-      let casePage = 'login';
+      let caseStage = 'design';
+      let casePage = 'spec';
       const caseStageTabs = document.getElementById('caseStageTabs');
       const casePageTabs = document.getElementById('casePageTabs');
+      const caseSpecTab = document.getElementById('caseSpecTab');
       const caseViewer = document.getElementById('caseViewer');
+      const caseSingle = document.getElementById('caseSingle');
+      const caseCompare = document.getElementById('caseCompare');
+      const caseOldImg = document.getElementById('caseOldImg');
+      const caseNewImg = document.getElementById('caseNewImg');
 
       function refreshCaseViewer() {
-        if (!caseViewer) return;
-        if (caseStage === 'spec') {
-          casePageTabs.style.display = 'none';
-          caseViewer.src = caseGallery.spec.tokens;
+        if (casePageTabs) casePageTabs.style.display = 'flex';
+        if (caseSpecTab) caseSpecTab.style.display = caseStage === 'design' ? '' : 'none';
+        if (caseStage === 'compare') {
+          if (casePage === 'spec') casePage = 'login';
+          casePageTabs?.querySelectorAll('button').forEach((b) => {
+            b.classList.toggle('active', b.dataset.page === casePage);
+          });
+          if (caseSingle) caseSingle.style.display = 'none';
+          if (caseCompare) caseCompare.style.display = 'grid';
+          const pair = caseGallery.compare[casePage] || caseGallery.compare.login;
+          if (caseOldImg) caseOldImg.src = pair.old;
+          if (caseNewImg) caseNewImg.src = pair.neu;
           return;
         }
-        casePageTabs.style.display = 'flex';
-        const map = caseGallery[caseStage] || {};
-        caseViewer.src = map[casePage] || map.login;
+        if (caseCompare) caseCompare.style.display = 'none';
+        if (caseSingle) caseSingle.style.display = 'flex';
+        if (!caseViewer) return;
+        const map = caseGallery.design || {};
+        caseViewer.src = map[casePage] || map.spec;
       }
 
       caseStageTabs?.addEventListener('click', (e) => {
@@ -1848,6 +2075,29 @@
       });
 
       refreshCaseViewer();
+
+      const caseWrap = document.getElementById('caseWrap');
+      const caseDrawerClose = document.getElementById('caseDrawerClose');
+      const caseDrawerOpen = document.getElementById('caseDrawerOpen');
+
+      function setCaseDrawer(open) {
+        if (!caseWrap) return;
+        caseWrap.classList.toggle('is-closed', !open);
+        if (!open) {
+          caseStage = 'compare';
+          casePage = 'login';
+          caseStageTabs?.querySelectorAll('button').forEach((b) => {
+            b.classList.toggle('active', b.dataset.stage === 'compare');
+          });
+          casePageTabs?.querySelectorAll('button').forEach((b) => {
+            b.classList.toggle('active', b.dataset.page === 'login');
+          });
+          refreshCaseViewer();
+        }
+      }
+
+      caseDrawerClose?.addEventListener('click', () => setCaseDrawer(false));
+      caseDrawerOpen?.addEventListener('click', () => setCaseDrawer(true));
 
       const defectGallery = {
         scene: 'images/07-defect-i18n-product-name.png',
