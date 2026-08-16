@@ -480,10 +480,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       text-align: center;
       position: relative;
-      padding: 8px 6px;
+      padding: 12px 6px 8px;
+      border: 1px solid transparent;
     }
 
     .wf-node + .wf-node::before {
@@ -1403,8 +1404,8 @@
       <!-- 1 效率 -->
       <section class="slide" data-id="result">
         <div class="deck">
-          <div class="kicker">1. 效率提升</div>
-          <h2 class="title">AI 辅助开发效率提升情况</h2>
+          <div class="kicker">1. 工时节省</div>
+          <h2 class="title">AI 辅助开发工时节省情况</h2>
           <div class="body one">
             <div class="panel" style="display:flex;flex-direction:column;min-height:0">
               <div class="result-grid">
@@ -1418,7 +1419,7 @@
                     <div class="chart-box" id="chartDays"></div>
                   </div>
                   <div class="chart-card chart-up">
-                    <h3>效率提升</h3>
+                    <h3>工时节省</h3>
                     <div class="chart-box" id="chartGain"></div>
                   </div>
                 </div>
@@ -1804,7 +1805,7 @@
       const slides = () => [...stage.querySelectorAll('.slide')];
       const labels = {
         cover: '封面',
-        result: '1 效率',
+        result: '1 工时',
         workflow: '2 工作流',
         prompt: '3 提示词',
         case: '4 案例·UI需求',
@@ -1898,7 +1899,7 @@
                   },
                 },
                 {
-                  value: 62,
+                  value: 73,
                   itemStyle: { color: '#c9a46c', borderRadius: [0, 6, 6, 0] },
                   label: {
                     show: true,
@@ -1959,7 +1960,7 @@
                 fontSize: 38,
                 fontWeight: 700,
               },
-              data: [{ value: 70, name: '效率提升' }],
+              data: [{ value: 70, name: '工时节省' }],
             },
           ],
         });
