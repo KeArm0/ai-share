@@ -134,9 +134,9 @@
     }
 
     .kicker {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 600;
-      letter-spacing: .06em;
+      letter-spacing: .04em;
       color: var(--brand);
     }
 
@@ -229,6 +229,14 @@
       color: #fff;
     }
 
+    .cover-hook {
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(255,255,255,.85);
+      margin: 0 0 24px;
+      max-width: 520px;
+    }
+
     /* Metrics */
     .metrics {
       display: grid;
@@ -260,13 +268,20 @@
     }
 
     .result-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      grid-template-rows: auto minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
       gap: 12px;
       flex: 1;
       min-height: 0;
       align-content: stretch;
+    }
+
+    .charts-row {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.2fr);
+      gap: 12px;
     }
 
     .result-grid .kpi {
@@ -291,9 +306,23 @@
       color: var(--text-3);
     }
 
+    /* 需求体量：品牌蓝，与琥珀预估、绿色效率形成三色对照 */
+    .result-grid .kpi.kpi-scope {
+      background: #e6eaf3;
+      border-color: #b3bed4;
+    }
+
+    .result-grid .kpi.kpi-scope .n {
+      color: #00246e;
+    }
+
+    .result-grid .kpi.kpi-scope .l {
+      color: #3d4f7a;
+    }
+
     .result-grid .kpi.kpi-compare {
-      background: linear-gradient(180deg, #f7f9fc 0%, #fff 100%);
-      border-color: #d6dae1;
+      background: linear-gradient(180deg, #faf6ef 0%, #fff 100%);
+      border-color: #e0d2b8;
     }
 
     .result-grid .kpi.kpi-compare .n {
@@ -311,9 +340,14 @@
       margin: 0 4px;
     }
 
+    /* 常规预估：琥珀金，与绿色实际形成对比（非红） */
     .result-grid .kpi.kpi-compare .n .est {
-      color: #8a93a2;
-      font-weight: 600;
+      color: #a67c2d;
+      font-weight: 700;
+    }
+
+    .result-grid .kpi.kpi-compare .l {
+      color: #7a6a4e;
     }
 
     .result-grid .kpi.kpi-up {
@@ -367,23 +401,19 @@
       width: 100%;
     }
 
-    .formula {
-      margin-top: 16px;
-      font-size: 14px;
-      color: var(--text-2);
-      line-height: 1.7;
-      padding: 12px 14px;
-      background: var(--brand-050);
-      border-left: 3px solid var(--brand);
-    }
-
     /* Workflow swimlanes */
     .wf {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       height: 100%;
       min-height: 0;
+    }
+
+    .wf-lead {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text-2);
     }
 
     .wf-lane {
@@ -392,16 +422,17 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       background: #fff;
-      padding: 14px 16px 16px;
+      padding: 12px 16px 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 8px;
     }
 
     .wf-lane-head {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px 10px;
     }
 
     .wf-tag {
@@ -426,8 +457,9 @@
     }
 
     .wf-lane-desc {
-      font-size: 12px;
-      color: var(--text-3);
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.45;
     }
 
     .wf-track {
@@ -435,7 +467,7 @@
       align-items: stretch;
       gap: 0;
       flex: 1;
-      min-height: 96px;
+      min-height: 108px;
     }
 
 
@@ -495,7 +527,7 @@
       margin-top: 4px;
       font-size: 11px;
       color: var(--text-3);
-      line-height: 1.3;
+      line-height: 1.4;
       position: relative;
       z-index: 1;
     }
@@ -560,6 +592,38 @@
       color: #12805c;
     }
 
+    .wf-key {
+      border-radius: 10px;
+      border: 1px solid #b3bed4;
+      background: linear-gradient(90deg, #eef1f7 0%, #fbfcfe 100%);
+      padding: 10px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .wf-key-label {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #00246e;
+      background: #fff;
+      border: 1px solid #b3bed4;
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-top: 1px;
+    }
+
+    .wf-key-text {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #31406b;
+    }
+
+    .wf-key-text strong {
+      color: #00246e;
+    }
+
     /* Prompt */
     .prompt-grid {
       display: grid;
@@ -580,32 +644,36 @@
 
     .prompt-card.weak { border-top: 3px solid var(--danger); }
     .prompt-card.strong { border-top: 3px solid var(--brand); }
-    .prompt-card.weak h3 { color: var(--danger); font-size: 13px; }
-    .prompt-card.strong h3 { color: var(--brand); font-size: 13px; }
+    .prompt-card.weak h3 { color: var(--danger); font-size: 14px; }
+    .prompt-card.strong h3 { color: var(--brand); font-size: 14px; }
 
     .prompt-card pre {
       flex: 1;
       white-space: pre-wrap;
       word-break: break-word;
       font-family: inherit;
-      font-size: 14px;
-      line-height: 1.65;
+      font-size: 16px;
+      line-height: 1.75;
       color: var(--text-1);
       background: var(--brand-050);
-      padding: 12px;
+      padding: 14px 16px;
       border-radius: 2px;
       overflow: auto;
     }
 
     .exp-list {
       display: grid;
-      gap: 10px;
-      margin-top: 12px;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #fafbfd;
+      border: 1px solid var(--border);
+      border-radius: 6px;
     }
 
     .exp-item {
-      font-size: 14px;
-      line-height: 1.65;
+      font-size: 13px;
+      line-height: 1.6;
       color: var(--text-2);
     }
 
@@ -678,30 +746,222 @@
       overflow: hidden;
     }
 
+    .defect-note {
+      flex-shrink: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-3);
+      padding: 8px 10px;
+      background: #fafbfd;
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+    }
+
     .skill-line {
       text-align: center;
       font-size: clamp(22px, 3vw, 32px);
       font-weight: 700;
       color: var(--brand);
-      padding: 12px 0 20px;
+      padding: 8px 0 6px;
+    }
+
+    .skill-lead {
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-2);
+      margin-bottom: 18px;
+    }
+
+    .skill-lead strong {
+      color: var(--brand);
+      font-weight: 700;
     }
 
     .skill-list {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
-      max-width: 720px;
+      max-width: 920px;
       margin: 0 auto;
     }
 
     .skill-item {
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 16px 18px;
-      font-size: 15px;
-      line-height: 1.6;
-      color: var(--text-2);
+      border-radius: 8px;
+      padding: 14px 16px;
       background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .skill-item .skill-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .skill-item h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brand);
+      line-height: 1.35;
+    }
+
+    .skill-item p {
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text-2);
+    }
+
+    .skill-item p strong {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .skill-item ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .skill-item li {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text-2);
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .skill-item li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .skill-item li strong {
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .skill-note {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-3);
+    }
+
+    .skill-item.accent {
+      background: #e7f2ef;
+      border-color: #b7d9cb;
+    }
+
+    .skill-item.accent .skill-num {
+      background: #12805c;
+    }
+
+    .skill-item.accent h3 {
+      color: #12805c;
+    }
+
+    .skill-item.primary {
+      background: linear-gradient(180deg, #eef1f7 0%, #fff 100%);
+      border-color: #b3bed4;
+    }
+
+    .skill-item.primary .skill-num {
+      background: #00246e;
+    }
+
+    .skill-item.primary h3 {
+      color: #00246e;
+    }
+
+    .skill-item.advanced {
+      background: linear-gradient(180deg, #f5f6f8 0%, #fff 100%);
+      border-color: #dcdfe6;
+    }
+
+    .skill-item.advanced .skill-num {
+      background: #9aa3b2;
+    }
+
+    .skill-item.advanced h3 {
+      color: #5c6573;
+    }
+
+    .skill-item.advanced p strong {
+      color: #5c6573;
+      font-weight: 700;
+    }
+
+    .skill-item.advanced li::before {
+      background: #9aa3b2;
+    }
+
+    .skill-item.advanced li strong {
+      color: #5c6573;
+      font-weight: 600;
+    }
+
+    .skill-item .skill-tag {
+      align-self: flex-start;
+      font-size: 11px;
+      font-weight: 700;
+      color: #00246e;
+      background: #e6eaf3;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 2px;
+    }
+
+    .skill-item.advanced .skill-tag {
+      color: #7a8494;
+      background: #eef0f3;
+    }
+
+    .skill-takeaway {
+      margin: 18px auto 0;
+      max-width: 920px;
+      border-radius: 10px;
+      border: 1px solid #b3bed4;
+      background: linear-gradient(90deg, #eef1f7 0%, #fbfcfe 100%);
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #00246e;
+    }
+
+    .skill-takeaway span {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: #00246e;
+      border-radius: 999px;
+      padding: 4px 10px;
     }
 
     .bottombar {
@@ -833,30 +1093,24 @@
       <!-- 1 效率 -->
       <section class="slide" data-id="result">
         <div class="deck">
-          <div class="kicker">1. 使用 AI 带来的效率提升</div>
-          <h2 class="title">Cursor 辅助下的一阶段交付对比</h2>
+          <div class="kicker">1. 效率提升</div>
+          <h2 class="title">AI 辅助开发，效率提升约 70%</h2>
           <div class="body one">
             <div class="panel" style="display:flex;flex-direction:column;min-height:0">
               <div class="result-grid">
-                <div class="kpi">
+                <div class="kpi kpi-scope">
                   <div class="n">31</div>
                   <div class="l">一阶段开发需求（项）</div>
                 </div>
-                <div class="kpi kpi-compare">
-                  <div class="n"><span class="est">62</span><span class="sep">→</span><span class="act">22</span></div>
-                  <div class="l">常规预估 → 实际工作日</div>
-                </div>
-                <div class="kpi kpi-up">
-                  <div class="n">约 70%</div>
-                  <div class="l">效率提升</div>
-                </div>
-                <div class="chart-card span-2">
-                  <h3>工时对比（工作日）</h3>
-                  <div class="chart-box" id="chartDays"></div>
-                </div>
-                <div class="chart-card chart-up">
-                  <h3>效率提升</h3>
-                  <div class="chart-box" id="chartGain"></div>
+                <div class="charts-row">
+                  <div class="chart-card">
+                    <h3>工时对比（工作日）</h3>
+                    <div class="chart-box" id="chartDays"></div>
+                  </div>
+                  <div class="chart-card chart-up">
+                    <h3>效率提升</h3>
+                    <div class="chart-box" id="chartGain"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -867,79 +1121,90 @@
       <!-- 2 工作流 -->
       <section class="slide" data-id="workflow">
         <div class="deck">
-          <div class="kicker">2.（1）共通工作流</div>
-          <h2 class="title">需求与缺陷，两条可复制的固定链路</h2>
+          <div class="kicker">2. 工作流</div>
+          <h2 class="title">需求与缺陷修复流程</h2>
           <div class="body one">
             <div class="wf">
+              <div class="wf-lead">就产品配置系统项目而言，主要有两种使用场景，需求实现和缺陷修复。良好的实现效果依赖于完善的工作流+清晰的提示词 </div>
               <div class="wf-lane req">
                 <div class="wf-lane-head">
-                  <span class="wf-tag">需求实现</span>
-                  <span class="wf-lane-desc">先边界，再动手</span>
+                  <span class="wf-tag">需求实现 · 从 0 到 1</span>
+                  <span class="wf-lane-desc">拿到需求先让 AI 分析并出方案，确认方案后再进行开发</span>
                 </div>
                 <div class="wf-track">
-                  <div class="wf-node key">
-                    <span class="badge">关键</span>
+                  <div class="wf-node">
                     <div class="num">1</div>
-                    <div class="txt">定边界</div>
-                    <div class="sub">改什么 / 不改什么</div>
+                    <div class="txt">输入需求</div>
+                    <div class="sub">把做什么、期望效果描述清楚</div>
                   </div>
                   <div class="wf-node">
                     <div class="num">2</div>
-                    <div class="txt">API 封装</div>
-                    <div class="sub">接口与落库</div>
+                    <div class="txt">给出方案</div>
+                    <div class="sub">AI 先给实现方案，不急着改代码</div>
                   </div>
-                  <div class="wf-node">
+                  <div class="wf-node key">
+                    <span class="badge">关键</span>
                     <div class="num">3</div>
-                    <div class="txt">页面接入</div>
-                    <div class="sub">前端联调</div>
+                    <div class="txt">确认方案</div>
+                    <div class="sub">逐条核对细节与实施步骤</div>
                   </div>
                   <div class="wf-node">
                     <div class="num">4</div>
-                    <div class="txt">UI / 工程化</div>
-                    <div class="sub">展示与规范</div>
+                    <div class="txt">实现</div>
+                    <div class="sub">按确认的方案实施</div>
                   </div>
                   <div class="wf-node">
                     <div class="num">5</div>
                     <div class="txt">验收</div>
-                    <div class="sub">对照目标</div>
+                    <div class="sub">对照最初需求，确认需求是否完成</div>
                   </div>
                 </div>
               </div>
 
               <div class="wf-lane bug">
                 <div class="wf-lane-head">
-                  <span class="wf-tag">缺陷修复</span>
-                  <span class="wf-lane-desc">先证据，再收敛</span>
+                  <span class="wf-tag">缺陷修复 · 从乱到准</span>
+                  <span class="wf-lane-desc">修缺陷最怕改一处坏三处。先把问题说清楚,让 AI 定位原因并给方案，确认后再改。</span>
                 </div>
                 <div class="wf-track">
                   <div class="wf-node">
                     <div class="num">1</div>
-                    <div class="txt">描述现象</div>
-                    <div class="sub">期望 vs 实际</div>
+                    <div class="txt">描述缺陷</div>
+                    <div class="sub">期望 vs 实际，把差距说清楚</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">2</div>
+                    <div class="txt">原因 + 修复方案</div>
+                    <div class="sub">AI 定位原因、给出修复方案</div>
                   </div>
                   <div class="wf-node key">
                     <span class="badge">关键</span>
-                    <div class="num">2</div>
-                    <div class="txt">贴证据</div>
-                    <div class="sub">截图 / 角色 / 接口</div>
-                  </div>
-                  <div class="wf-node">
                     <div class="num">3</div>
-                    <div class="txt">缩小范围</div>
-                    <div class="sub">只改必要处</div>
+                    <div class="txt">确认方案</div>
+                    <div class="sub">核对原因与修复范围，确认后再改</div>
                   </div>
                   <div class="wf-node">
                     <div class="num">4</div>
-                    <div class="txt">迭代验收</div>
-                    <div class="sub">复测原路径</div>
+                    <div class="txt">修复</div>
+                    <div class="sub">只修复必要处，避免带出新问题</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">5</div>
+                    <div class="txt">验收</div>
+                    <div class="sub">测试修复效果，确保修复完成，也没改坏别的</div>
                   </div>
                 </div>
               </div>
 
+              <div class="wf-key">
+                <div class="wf-key-label">共同关键</div>
+                <div class="wf-key-text"><strong>逐条核对方案细节与实施步骤，确认后再动手</strong>。这是避免返工最重要的一步。</div>
+              </div>
+
               <div class="wf-foot">
-                <div class="wf-foot-label">口诀</div>
+                <div class="wf-foot-label">区别</div>
                 <div class="wf-foot-text">
-                  需求先<strong>定边界</strong>，缺陷先<strong>贴证据</strong>；对齐约束后再改，减少返工。
+                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从乱到准</strong>。需求先<strong>讲清要什么</strong>，缺陷先<strong>讲清哪里错了</strong>。
                 </div>
               </div>
             </div>
@@ -950,7 +1215,7 @@
       <!-- 3 提示词 -->
       <section class="slide" data-id="prompt">
         <div class="deck">
-          <div class="kicker">2.（2）提示词优化</div>
+          <div class="kicker">3. 提示词</div>
           <h2 class="title">同一目标，不同提示词效果相距甚远</h2>
           <div class="body one">
             <div class="panel" style="display:flex;flex-direction:column;min-height:0">
@@ -977,10 +1242,45 @@
         </div>
       </section>
 
-      <!-- 4 案例 -->
+      <!-- 4 缺陷案例 -->
+      <section class="slide" data-id="defect">
+        <div class="deck">
+          <div class="kicker">4. 案例 · 缺陷修复</div>
+          <h2 class="title">修缺陷：从乱到准的一次实战</h2>
+          <div class="body two">
+            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
+              <div class="tl-item" style="display:block;border:0;padding:0">
+                <div class="tl-step" style="margin-bottom:6px">输入缺陷（现象 + 证据）</div>
+                <pre class="case-prompt">产品名称在产品配置列表里显示异常：期望是跟随系统语言环境显示对应语言的产品名，实际切换语言后仍是默认语言。
+
+复现步骤：登录 → 产品配置 → 产品列表 → 切换语言 → 产品名称未跟随。
+涉及界面与接口响应两处，账号：admin / 测试环境，截图见右侧。</pre>
+              </div>
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-step">描述现象</div><div class="tl-text">期望 vs 实际，一句话说清差距</div></div>
+                <div class="tl-item"><div class="tl-step">贴证据</div><div class="tl-text">截图 + 复现步骤 + 接口响应</div></div>
+                <div class="tl-item"><div class="tl-step">缩小范围</div><div class="tl-text">只改名称映射处，不动列表逻辑</div></div>
+                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换路径，通过</div></div>
+              </div>
+            </div>
+            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
+              <div class="tabs" id="defectTabs">
+                <button type="button" data-ev="scene" class="active">现象</button>
+                <button type="button" data-ev="evidence">证据</button>
+              </div>
+              <div class="viewer">
+                <img id="defectViewer" src="images/07-defect-i18n-product-name.png" alt="缺陷案例配图" data-zoom />
+              </div>
+              <div class="defect-note">现象 → 证据，证据越全定位越快；只改必要处，避免改一处坏三处。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 案例 -->
       <section class="slide" data-id="case">
         <div class="deck">
-          <div class="kicker">2.（3）完整案例</div>
+          <div class="kicker">5. 案例 · UI 优化</div>
           <h2 class="title">UI 优化：按工作流完整跑通</h2>
           <div class="body two">
             <div class="panel" style="display:flex;flex-direction:column;gap:12px;min-height:0">
@@ -1024,17 +1324,40 @@
         </div>
       </section>
 
-      <!-- 5 展望 -->
+      <!-- 6 展望 -->
       <section class="slide" data-id="next">
         <div class="deck">
-          <div class="kicker">4. 未来持续探索</div>
-          <h2 class="title">持续学习新的 AI 使用技能，进一步提升效率</h2>
+          <div class="kicker">6. 展望</div>
+          <h2 class="title">未来持续探索AI使用新方向，学习新的AI使用技能，进一步提升工作效率</h2>
           <div class="body one">
-            <div class="panel">
-              <div class="skill-line">经验 → Skill / 规则 → 复用</div>
+            <div class="panel" style="display:flex;flex-direction:column;justify-content:center;min-height:0">
+              <div class="skill-line">经验 → 规则 → 复用</div>
+              <!-- <div class="skill-lead">把这条闭环跑起来：<strong>经验 → 规则 → 复用</strong>。多 Agent、知识库 / RAG 作为进阶能力，在真实项目里按需启用。</div> -->
               <div class="skill-list">
-                <div class="skill-item">总结通用的规则规范，写进 Skill，方便复用</div>
+                <div class="skill-item primary">
+                  <div class="skill-num">1</div>
+                  <h3>沉淀通用规则，封装为 Skill / 规则包</h3>
+                  <p>把高频复用的内容固化下来，形成可移植的资产：</p>
+                  <ul>
+                    <li><strong>UI 风格规范</strong>：组件库选型、颜色体系、间距栅格、字体标尺，写进规则文件，新项目一键加载</li>
+                    <li><strong>提问模板</strong>：需求分析、代码生成、Bug 定位、代码审查，沉淀标准提问格式，减少对齐损耗</li>
+                    <li><strong>发版检查清单</strong>：环境变量、接口地址、构建产物、回滚预案，固化为可执行检查项</li>
+                  </ul>
+                  <p class="skill-note">做法：每做完一个项目，抽取出可复用的部分，归入个人 / 团队规则库；新项目启动直接加载，不用从零磨合。</p>
+                </div>
+                <div class="skill-item advanced">
+                  <div class="skill-num">2</div>
+                  <span class="skill-tag">高级用法</span>
+                  <h3>探索多 Agent 协作，提升复杂任务处理能力</h3>
+                  <p>单 Agent 有上下文窗口和注意力局限，复杂任务容易顾此失彼，多 Agent 的价值是分而治之：</p>
+                  <ul>
+                    <li><strong>拆分策略</strong>：需求分析、方案设计、代码实现、代码审查，各司其职，串并行结合</li>
+                    <li><strong>协作方式</strong>：串行接力（设计→编码→审查）、并行分治（前后端同步）、交叉验证（对比结果找差异）</li>
+                    <li><strong>知识库 + RAG</strong>：接口文档、业务约定、技术选型建进知识库，执行前先检索，减少幻觉和反复对齐</li>
+                  </ul>
+                </div>
               </div>
+              
             </div>
           </div>
         </div>
@@ -1096,8 +1419,9 @@
         result: '1 效率',
         workflow: '2 工作流',
         prompt: '3 提示词',
-        case: '4 案例',
-        next: '5 展望',
+        defect: '4 案例·缺陷',
+        case: '5 案例·UI',
+        next: '6 展望',
       };
 
       function rebuildDots() {
@@ -1164,7 +1488,7 @@
               overflow: 'break',
               align: 'right',
               formatter: (value) => value,
-              color: (value) => (value === 'Cursor 辅助实际' ? '#12805c' : '#8a93a2'),
+              color: (value) => (value === 'Cursor 辅助实际' ? '#12805c' : '#a67c2d'),
             },
           },
           series: [
@@ -1187,14 +1511,14 @@
                 },
                 {
                   value: 62,
-                  itemStyle: { color: '#c5cad3', borderRadius: [0, 6, 6, 0] },
+                  itemStyle: { color: '#c9a46c', borderRadius: [0, 6, 6, 0] },
                   label: {
                     show: true,
                     position: 'right',
                     distance: 10,
-                    color: '#8a93a2',
+                    color: '#a67c2d',
                     fontSize: 14,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     formatter: '{c} 工作日',
                   },
                 },
@@ -1383,6 +1707,21 @@
       });
 
       refreshCaseViewer();
+
+      const defectGallery = {
+        scene: 'images/07-defect-i18n-product-name.png',
+        evidence: 'images/07b-defect-i18n-evidence2.png',
+      };
+      const defectTabs = document.getElementById('defectTabs');
+      const defectViewer = document.getElementById('defectViewer');
+
+      defectTabs?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-ev]');
+        if (!btn) return;
+        defectTabs.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (defectViewer) defectViewer.src = defectGallery[btn.dataset.ev];
+      });
 
       document.addEventListener('click', (e) => {
         const img = e.target.closest('img[data-zoom]');
