@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>AI辅助开发分享-以产品配置系统为例</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,13 +33,28 @@
       overflow: hidden;
     }
 
-    .app {
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
+    /* 固定设计稿尺寸，整页等比缩放，手机/电脑显示一致 */
+    .viewport {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
       background:
         radial-gradient(1200px 600px at 50% -10%, rgba(0, 36, 110, .10), transparent 60%),
         #e8eef6;
+    }
+
+    .app {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1088px;
+      height: 780px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      transform-origin: center center;
+      will-change: transform;
     }
 
     .topbar {
@@ -47,7 +62,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      width: min(1040px, calc(100% - 48px));
+      width: 1040px;
       margin: 14px auto 0;
       padding: 12px 18px;
       background: var(--brand);
@@ -79,10 +94,11 @@
 
     .stage {
       position: relative;
-      width: min(1040px, calc(100% - 48px));
+      width: 1040px;
       margin: 0 auto;
       background: transparent;
       overflow: hidden;
+      min-height: 0;
     }
 
     .slide {
@@ -145,16 +161,6 @@
 
     .body.one { grid-template-columns: 1fr; }
     .body.two { grid-template-columns: 1fr 1.05fr; }
-
-    @media (max-width: 960px) {
-      .topbar,
-      .stage,
-      .bottombar {
-        width: calc(100% - 24px);
-      }
-      .deck { padding: 18px 16px 14px; }
-      .body.two { grid-template-columns: 1fr; }
-    }
 
     .panel {
       background: #fafbfd;
@@ -228,10 +234,6 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 12px;
-    }
-
-    @media (max-width: 960px) {
-      .metrics { grid-template-columns: 1fr 1fr; }
     }
 
     .metric {
@@ -363,16 +365,6 @@
       flex: 1;
       min-height: 200px;
       width: 100%;
-    }
-
-    @media (max-width: 960px) {
-      .result-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto;
-      }
-      .result-grid .chart-card.span-2 {
-        grid-column: auto;
-      }
     }
 
     .formula {
@@ -568,22 +560,12 @@
       color: #12805c;
     }
 
-    @media (max-width: 960px) {
-      .wf-track { flex-wrap: wrap; gap: 8px; }
-      .wf-node { flex: 1 1 40%; }
-      .wf-node + .wf-node::before { display: none; }
-    }
-
     /* Prompt */
     .prompt-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       height: 100%;
-    }
-
-    @media (max-width: 960px) {
-      .prompt-grid { grid-template-columns: 1fr; }
     }
 
     .prompt-card {
@@ -727,7 +709,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      width: min(1040px, calc(100% - 48px));
+      width: 1040px;
       margin: 0 auto 14px;
       padding: 10px 16px;
       background: var(--surface);
@@ -797,19 +779,20 @@
       background: #fff;
     }
 
+    body.fs .viewport {
+      background: #0b1a3a;
+    }
     body.fs .topbar,
     body.fs .bottombar { display: none; }
     body.fs .app {
-      height: 100vh;
-      height: 100dvh;
+      width: 1280px;
+      height: 860px;
       grid-template-rows: 1fr;
-      padding: 0;
-      background: #0b1a3a;
     }
     body.fs .stage {
-      width: min(1280px, calc(100% - 48px));
-      height: min(860px, calc(100% - 48px));
-      margin: auto;
+      width: 1280px;
+      height: 100%;
+      margin: 0;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
@@ -825,7 +808,8 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="viewport" id="viewport">
+  <div class="app" id="app">
     <header class="topbar">
       <h1>AI辅助开发分享-以产品配置系统为例</h1>
       <button type="button" class="icon-btn" id="btnFs">全屏</button>
@@ -1067,6 +1051,7 @@
       </div>
     </footer>
   </div>
+  </div>
 
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <img alt="" />
@@ -1074,6 +1059,7 @@
 
   <script>
     (() => {
+      const app = document.getElementById('app');
       const stage = document.getElementById('stage');
       const dotsEl = document.getElementById('dots');
       const btnPrev = document.getElementById('btnPrev');
@@ -1082,7 +1068,28 @@
       const lightbox = document.getElementById('lightbox');
       const lbImg = lightbox.querySelector('img');
 
+      const DESIGN = { normal: { w: 1088, h: 780 }, fs: { w: 1280, h: 860 } };
+
+      function fitBoard() {
+        const mode = document.body.classList.contains('fs') ? DESIGN.fs : DESIGN.normal;
+        const scale = Math.min(window.innerWidth / mode.w, window.innerHeight / mode.h);
+        app.style.width = mode.w + 'px';
+        app.style.height = mode.h + 'px';
+        app.style.transform = `translate(-50%, -50%) scale(${Math.max(scale, 0.2)})`;
+      }
+
+      fitBoard();
+      window.addEventListener('resize', () => {
+        fitBoard();
+        chartDays?.resize();
+        chartGain?.resize();
+      });
+      window.addEventListener('orientationchange', () => setTimeout(fitBoard, 80));
+
       let index = 0;
+      let chartDays;
+      let chartGain;
+      let chartsReady = false;
       const slides = () => [...stage.querySelectorAll('.slide')];
       const labels = {
         cover: '封面',
@@ -1117,10 +1124,6 @@
           requestAnimationFrame(() => initResultCharts());
         }
       }
-
-      let chartDays;
-      let chartGain;
-      let chartsReady = false;
 
       function initResultCharts() {
         if (typeof echarts === 'undefined') return;
@@ -1254,11 +1257,6 @@
         chartsReady = true;
       }
 
-      window.addEventListener('resize', () => {
-        chartDays?.resize();
-        chartGain?.resize();
-      });
-
       function go(i) { index = i; render(); }
       function next() { go(index + 1); }
       function prev() { go(index - 1); }
@@ -1269,6 +1267,7 @@
       function enterFs() {
         document.body.classList.add('fs');
         btnFs.textContent = '退出全屏';
+        fitBoard();
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
         try {
@@ -1276,6 +1275,7 @@
           if (p && typeof p.catch === 'function') p.catch(() => {});
         } catch (_) {}
         setTimeout(() => {
+          fitBoard();
           chartDays?.resize();
           chartGain?.resize();
         }, 120);
@@ -1284,6 +1284,7 @@
       function exitFs() {
         document.body.classList.remove('fs');
         btnFs.textContent = '全屏';
+        fitBoard();
         const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
         try {
           if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -1292,6 +1293,7 @@
           }
         } catch (_) {}
         setTimeout(() => {
+          fitBoard();
           chartDays?.resize();
           chartGain?.resize();
         }, 120);
@@ -1322,6 +1324,11 @@
           document.body.classList.remove('fs');
           btnFs.textContent = '全屏';
         }
+        fitBoard();
+        setTimeout(() => {
+          chartDays?.resize();
+          chartGain?.resize();
+        }, 120);
       });
 
       const caseGallery = {
