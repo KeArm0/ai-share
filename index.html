@@ -625,61 +625,169 @@
     }
 
     /* Prompt */
+    .prompt-page {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .prompt-lead {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
     .prompt-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      height: 100%;
+      align-items: stretch;
+      flex: 0 0 auto;
     }
 
     .prompt-card {
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 14px 16px;
+      border-radius: 8px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      height: 100%;
       min-height: 0;
+      background: #fff;
     }
 
-    .prompt-card.weak { border-top: 3px solid var(--danger); }
-    .prompt-card.strong { border-top: 3px solid var(--brand); }
-    .prompt-card.weak h3 { color: var(--danger); font-size: 14px; }
-    .prompt-card.strong h3 { color: var(--brand); font-size: 14px; }
+    .prompt-card.weak { border-color: #e0d2b8; background: #faf6ef; }
+    .prompt-card.strong { border-color: #b7d9cb; background: #e7f2ef; }
+    .prompt-card.weak h3 { color: #a67c2d; font-size: 15px; }
+    .prompt-card.strong h3 { color: #12805c; font-size: 15px; }
+
+    .prompt-card .prompt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .prompt-card .prompt-tag {
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+
+    .prompt-card.weak .prompt-tag {
+      color: #a67c2d;
+      background: #f3ead8;
+    }
+
+    .prompt-card.strong .prompt-tag {
+      color: #12805c;
+      background: #e7f2ef;
+    }
 
     .prompt-card pre {
-      flex: 1;
       white-space: pre-wrap;
       word-break: break-word;
       font-family: inherit;
-      font-size: 16px;
-      line-height: 1.75;
+      font-size: 14px;
+      line-height: 1.55;
       color: var(--text-1);
-      background: var(--brand-050);
-      padding: 14px 16px;
-      border-radius: 2px;
-      overflow: auto;
-    }
-
-    .exp-list {
-      display: grid;
-      gap: 8px;
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: #fafbfd;
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(0, 36, 110, .08);
+      padding: 8px 12px;
       border-radius: 6px;
     }
 
-    .exp-item {
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--text-2);
+    .prompt-points {
+      display: grid;
+      gap: 6px;
     }
 
-    .exp-item strong {
+    .prompt-points .pt {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-2);
+      padding-left: 10px;
+      border-left: 3px solid #d6dae1;
+    }
+
+    .prompt-card.weak .prompt-points .pt { border-left-color: #c9a46c; }
+    .prompt-card.strong .prompt-points .pt { border-left-color: #12805c; }
+
+    .prompt-points .pt strong {
+      color: var(--text-1);
+      font-weight: 700;
+    }
+
+    .prompt-recipes {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      flex-shrink: 0;
+      border: 1px solid #b3bed4;
+      border-radius: 8px;
+      background: #eef1f7;
+      overflow: hidden;
+    }
+
+    .prompt-recipe {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 0;
+      background: transparent;
+    }
+
+    .prompt-recipe + .prompt-recipe {
+      border-top: 1px solid #d4dae6;
+    }
+
+    .prompt-recipe h4 {
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--brand);
-      font-weight: 600;
+      margin-bottom: 0;
+    }
+
+    .prompt-recipe .prompt-points .pt {
+      border-left-color: #00246e;
+    }
+
+    .prompt-more {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .prompt-more .pm {
+      border: 1px solid #b7d9cb;
+      border-radius: 8px;
+      background: #e7f2ef;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .prompt-more .pm h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #12805c;
+    }
+
+    .prompt-more .pm p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #2f5f4d;
     }
 
     /* Timeline + tabs */
@@ -1129,7 +1237,7 @@
               <div class="wf-lane req">
                 <div class="wf-lane-head">
                   <span class="wf-tag">需求实现 · 从 0 到 1</span>
-                  <span class="wf-lane-desc">拿到需求先让 AI 分析并出方案，确认方案后再进行开发</span>
+                  <span class="wf-lane-desc">拿到需求先圈清边界，再让 AI 出方案；确认方案后再开发。</span>
                 </div>
                 <div class="wf-track">
                   <div class="wf-node">
@@ -1137,26 +1245,32 @@
                     <div class="txt">输入需求</div>
                     <div class="sub">把做什么、期望效果描述清楚</div>
                   </div>
-                  <div class="wf-node">
+                  <div class="wf-node key">
+                    <span class="badge">关键</span>
                     <div class="num">2</div>
+                    <div class="txt">明确边界</div>
+                    <div class="sub">若改动涉及现有功能,只改动那些部分</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">3</div>
                     <div class="txt">给出方案</div>
                     <div class="sub">AI 先给实现方案，不急着改代码</div>
                   </div>
                   <div class="wf-node key">
                     <span class="badge">关键</span>
-                    <div class="num">3</div>
+                    <div class="num">4</div>
                     <div class="txt">确认方案</div>
                     <div class="sub">逐条核对细节与实施步骤</div>
                   </div>
                   <div class="wf-node">
-                    <div class="num">4</div>
+                    <div class="num">5</div>
                     <div class="txt">实现</div>
                     <div class="sub">按确认的方案实施</div>
                   </div>
                   <div class="wf-node">
-                    <div class="num">5</div>
+                    <div class="num">6</div>
                     <div class="txt">验收</div>
-                    <div class="sub">对照最初需求，确认需求是否完成</div>
+                    <div class="sub">对照最初需求，确认是否完成</div>
                   </div>
                 </div>
               </div>
@@ -1204,7 +1318,7 @@
               <div class="wf-foot">
                 <div class="wf-foot-label">区别</div>
                 <div class="wf-foot-text">
-                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从乱到准</strong>。需求先<strong>讲清要什么</strong>，缺陷先<strong>讲清哪里错了</strong>。
+                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从乱到准</strong>。需求先<strong>明确边界</strong>，缺陷先<strong>讲清哪里错了</strong>。
                 </div>
               </div>
             </div>
@@ -1216,25 +1330,52 @@
       <section class="slide" data-id="prompt">
         <div class="deck">
           <div class="kicker">3. 提示词</div>
-          <h2 class="title">同一目标，不同提示词效果相距甚远</h2>
+          <h2 class="title">提示词强弱对比</h2>
           <div class="body one">
-            <div class="panel" style="display:flex;flex-direction:column;min-height:0">
+            <div class="prompt-page">
+              <div class="prompt-lead">具体实施上，对于同一个目标，不同的提示词实现的效果可能相距甚远。</div>
               <div class="prompt-grid">
                 <div class="prompt-card weak">
-                  <h3>弱</h3>
+                  <div class="prompt-head">
+                    <h3>弱 · 未明确边界和效果</h3>
+                    <span class="prompt-tag">很难达到预期效果</span>
+                  </div>
                   <pre>把类目详情页面的 UI 优化一下</pre>
+                  <div class="prompt-points">
+                    <div class="pt"><strong>没说改哪：</strong>详情页整页都能动，范围太大</div>
+                    <div class="pt"><strong>没说不能动：</strong>树展开、接口这些业务逻辑可能被顺手改掉</div>
+                    <div class="pt"><strong>没说做成什么样：</strong>「优化」没有验收标准，改完后发现达不到预期</div>
+                  </div>
                 </div>
                 <div class="prompt-card strong">
-                  <h3>强</h3>
+                  <div class="prompt-head">
+                    <h3>强 · 明确边界 + 预期效果</h3>
+                    <span class="prompt-tag">一次能贴近</span>
+                  </div>
                   <pre>修改类目详情页的数据展示方式。只改类目详情页的 UI 展示部分，树结构展开功能等业务逻辑接口不变。数据换为 table 列表展示，类目列居左，操作列居中，操作按钮和类目名称添加 hover 效果，hover 时字体变为主题色。</pre>
+                  <div class="prompt-points">
+                    <div class="pt"><strong>先确定修改范围：</strong>只改详情页展示，树结构和接口不动</div>
+                    <div class="pt"><strong>明确修改方式和预期效果：</strong>改成 table、列对齐、hover 时字体变为主题色</div>
+                  </div>
                 </div>
               </div>
-              <div class="exp-list">
-                <div class="exp-item">
-                  <strong>需求类型：</strong>确定边界（限定操作范围）+ 具体的功能描述 + 清晰实现步骤 + 图片说明（可选）
+              <div class="prompt-recipes">
+                <div class="prompt-recipe">
+                  <h4>做需求，可以这样问</h4>
+                  <div class="prompt-points">
+                    <div class="pt"><strong>开发哪一部分？</strong>新增什么模块</div>
+                    <div class="pt"><strong>哪些不能动？</strong>树结构、接口这些业务逻辑不动</div>
+                    <div class="pt"><strong>需要什么样的效果</strong>列表怎么排、hover 什么效果</div>
+                    <div class="pt"><strong>有效果示例图/示例更好：</strong>能够准确描述预期效果</div>
+                  </div>
                 </div>
-                <div class="exp-item">
-                  <strong>缺陷修复：</strong>现象（期望结果 + 实际结果）+ 证据（截图）
+                <div class="prompt-recipe">
+                  <h4>修缺陷，可以这样问</h4>
+                  <div class="prompt-points">
+                    <div class="pt"><strong>期望是什么？</strong>本来期望的样式、布局应该怎样</div>
+                     <div class="pt"><strong>缺陷原因？</strong>布局错位、和整体风格不搭等</div>
+                    <div class="pt"><strong>附上具体正确/错误样例：</strong>哪一个接口返回格式应该是什么样，那一个按钮点击展现效果不对</div>
+                  </div>
                 </div>
               </div>
             </div>
