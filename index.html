@@ -2,1335 +2,708 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>AI辅助开发分享-以产品配置系统为例</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
   <style>
     :root {
       --brand: #00246e;
       --brand-900: #001b56;
-      --brand-050: #eef1f7;
-      --text-1: #1c2434;
-      --text-2: #525c6b;
-      --text-3: #8a93a2;
-      --border: #e3e6eb;
-      --bg: #f4f6f9;
-      --surface: #ffffff;
-      --danger: #b42318;
+      --ink: #1c1917;
+      --muted: #57534e;
+      --faint: #78716c;
+      --line: #e7e5e4;
+      --paper: #faf8f5;
+      --card: #fff;
       --ok: #12805c;
+      --warn: #a67c2d;
+      --shadow: 0 1px 2px rgba(28,25,23,.04), 0 12px 32px rgba(0,36,110,.06);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
-      height: 100%;
-      background: #e8eef6;
-      color: var(--text-1);
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
       font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-      overflow: hidden;
+      line-height: 1.75;
     }
 
-    /* 固定设计稿尺寸，整页等比缩放，手机/电脑显示一致 */
-    .viewport {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-      background:
-        radial-gradient(1200px 600px at 50% -10%, rgba(0, 36, 110, .10), transparent 60%),
-        #e8eef6;
-    }
+    a { color: inherit; }
 
-    .app {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 1088px;
-      height: 780px;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      transform-origin: center center;
-      will-change: transform;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      width: 1040px;
-      margin: 14px auto 0;
-      padding: 12px 18px;
-      background: var(--brand);
-      color: #fff;
-      border-radius: 10px 10px 0 0;
-    }
-
-    .topbar h1 {
-      font-size: 15px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .icon-btn {
-      border: 1px solid rgba(255,255,255,.28);
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
       background: transparent;
-      color: #fff;
-      font: inherit;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      flex-shrink: 0;
+      border-bottom: 1px solid transparent;
+      transition: background .25s ease, border-color .25s ease;
     }
 
-    .icon-btn:hover { background: rgba(255,255,255,.1); }
+    .site-nav.solid {
+      background: rgba(250, 248, 245, .92);
+      backdrop-filter: blur(12px);
+      border-bottom-color: var(--line);
+    }
 
-    .stage {
-      position: relative;
-      width: 1040px;
+    .site-nav .inner {
+      max-width: 1080px;
       margin: 0 auto;
-      background: transparent;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .slide {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: stretch;
-      justify-content: center;
-      opacity: 0;
-      transform: translateX(16px);
-      transition: opacity .2s ease, transform .2s ease;
-    }
-
-    .slide.active {
-      display: flex;
-      opacity: 1;
-      transform: none;
-    }
-
-    .deck {
-      width: 100%;
-      height: 100%;
-      background: var(--surface);
-      border: 1px solid rgba(0, 36, 110, .08);
-      border-top: 0;
-      border-radius: 0;
-      padding: 28px 32px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      overflow: auto;
-      box-shadow: 0 18px 40px rgba(0, 27, 86, .08);
-    }
-
-    .kicker {
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: .04em;
-      color: var(--brand);
-    }
-
-    .title {
-      font-size: clamp(22px, 2.2vw, 28px);
-      font-weight: 700;
-      line-height: 1.3;
-    }
-
-    .lead {
-      font-size: 15px;
-      line-height: 1.7;
-      color: var(--text-2);
-    }
-
-    .body {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      gap: 16px;
-    }
-
-    .body.one { grid-template-columns: 1fr; }
-    .body.two { grid-template-columns: 1fr 1.05fr; }
-
-    .panel {
-      background: #fafbfd;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 18px 20px;
-      min-height: 0;
-      overflow: auto;
-    }
-
-    .panel.media {
-      padding: 10px;
+      padding: 12px 28px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: #fff;
+      gap: 20px;
+      overflow-x: auto;
     }
 
-    .panel.media img,
-    .viewer img {
-      width: 100%;
-      height: 100%;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      object-position: center;
-    }
-
-    /* Cover */
-    .deck.cover {
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      background:
-        linear-gradient(165deg, #001b56 0%, #00246e 52%, #003a96 100%);
-      color: #fff;
-      border: 0;
-      border-radius: 0;
-      box-shadow: 0 18px 40px rgba(0, 27, 86, .18);
-    }
-
-    .cover-inner {
-      max-width: 640px;
-      padding: 24px;
-    }
-
-    .cover-title {
-      font-size: clamp(28px, 3.6vw, 40px);
-      font-weight: 700;
-      line-height: 1.35;
-      letter-spacing: .02em;
-    }
-
-    .cover-line {
-      width: 48px;
-      height: 2px;
-      background: rgba(255,255,255,.45);
-      margin: 28px auto;
-    }
-
-    .cover-meta {
-      font-size: 18px;
-      line-height: 1.9;
-      color: rgba(255,255,255,.88);
-    }
-
-    .cover-meta strong {
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .cover-hook {
-      font-size: 15px;
-      line-height: 1.7;
-      color: rgba(255,255,255,.85);
-      margin: 0 0 24px;
-      max-width: 520px;
-    }
-
-    /* Metrics */
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-
-    .metric {
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 18px 14px;
-      text-align: center;
-      background: #fff;
-    }
-
-    .metric .num {
-      font-size: clamp(28px, 3.5vw, 40px);
-      font-weight: 700;
-      color: var(--brand);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.1;
-    }
-
-    .metric .unit {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--text-2);
-      line-height: 1.4;
-    }
-
-    .result-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      flex: 1;
-      min-height: 0;
-      align-content: stretch;
-    }
-
-    .charts-row {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.2fr);
-      gap: 12px;
-    }
-
-    .result-grid .kpi {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-      padding: 12px 14px;
-      text-align: center;
-    }
-
-    .result-grid .kpi .n {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--brand);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.1;
-    }
-
-    .result-grid .kpi .l {
-      margin-top: 6px;
-      font-size: 12px;
-      color: var(--text-3);
-    }
-
-    /* 需求体量：品牌蓝，与琥珀预估、绿色效率形成三色对照 */
-    .result-grid .kpi.kpi-scope {
-      background: #e6eaf3;
-      border-color: #b3bed4;
-    }
-
-    .result-grid .kpi.kpi-scope .n {
-      color: #00246e;
-    }
-
-    .result-grid .kpi.kpi-scope .l {
-      color: #3d4f7a;
-    }
-
-    .result-grid .kpi.kpi-compare {
-      background: linear-gradient(180deg, #faf6ef 0%, #fff 100%);
-      border-color: #e0d2b8;
-    }
-
-    .result-grid .kpi.kpi-compare .n {
-      font-size: 26px;
-      letter-spacing: .02em;
-    }
-
-    .result-grid .kpi.kpi-compare .n .act {
-      color: #12805c;
-    }
-
-    .result-grid .kpi.kpi-compare .n .sep {
-      color: #b4bac4;
-      font-weight: 500;
-      margin: 0 4px;
-    }
-
-    /* 常规预估：琥珀金，与绿色实际形成对比（非红） */
-    .result-grid .kpi.kpi-compare .n .est {
-      color: #a67c2d;
-      font-weight: 700;
-    }
-
-    .result-grid .kpi.kpi-compare .l {
-      color: #7a6a4e;
-    }
-
-    .result-grid .kpi.kpi-up {
-      background: #e7f2ef;
-      border-color: #b7d9cb;
-    }
-
-    .result-grid .kpi.kpi-up .n {
-      color: #12805c;
-    }
-
-    .result-grid .kpi.kpi-up .l {
-      color: #3d7a64;
-    }
-
-    .result-grid .chart-card {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-      padding: 12px 14px 8px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      min-width: 0;
-    }
-
-    .result-grid .chart-card.span-2 {
-      grid-column: span 2;
-    }
-
-    .result-grid .chart-card.chart-up {
-      background: linear-gradient(180deg, #f3faf7 0%, #fff 55%);
-      border-color: #b7d9cb;
-    }
-
-    .result-grid .chart-card.chart-up h3 {
-      color: #12805c;
-    }
-
-    .result-grid .chart-card h3 {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-2);
-      margin-bottom: 4px;
+    .site-nav .brand {
       flex-shrink: 0;
-    }
-
-    .result-grid .chart-box {
-      flex: 1;
-      min-height: 200px;
-      width: 100%;
-    }
-
-    /* Workflow swimlanes */
-    .wf {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      height: 100%;
-      min-height: 0;
-    }
-
-    .wf-lead {
-      font-size: 14px;
-      line-height: 1.55;
-      color: var(--text-2);
-    }
-
-    .wf-lane {
-      flex: 1;
-      min-height: 0;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      padding: 12px 16px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .wf-lane-head {
-      display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      gap: 8px 10px;
-    }
-
-    .wf-tag {
-      display: inline-flex;
-      align-items: center;
-      height: 26px;
-      padding: 0 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .02em;
-    }
-
-    .wf-lane.req .wf-tag {
-      background: #e6e9f1;
-      color: var(--brand);
-    }
-
-    .wf-lane.bug .wf-tag {
-      background: #f7f1e8;
-      color: #b3701a;
-    }
-
-    .wf-lane-desc {
+      margin-right: auto;
       font-size: 13px;
-      color: var(--text-2);
-      line-height: 1.45;
+      font-weight: 700;
+      color: var(--brand);
+      letter-spacing: .04em;
     }
 
-    .wf-track {
-      display: flex;
-      align-items: stretch;
-      gap: 0;
-      flex: 1;
-      min-height: 108px;
+    .site-nav a {
+      flex-shrink: 0;
+      text-decoration: none;
+      font-size: 13px;
+      color: var(--muted);
     }
 
+    .site-nav a:hover { color: var(--brand); }
 
-    .wf-node {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      text-align: center;
+    /* 封面 */
+    .hero {
       position: relative;
-      padding: 12px 6px 8px;
-      border: 1px solid transparent;
+      min-height: 92vh;
+      min-height: 92svh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(820px 460px at 78% 8%, rgba(0, 36, 110, .07), transparent 62%),
+        radial-gradient(680px 420px at 8% 92%, rgba(18, 128, 92, .06), transparent 60%),
+        linear-gradient(180deg, #f2f5fa 0%, var(--paper) 62%);
     }
 
-    .wf-node + .wf-node::before {
+    .hero::after {
       content: "";
       position: absolute;
-      left: -1px;
-      top: 50%;
-      width: 12px;
-      height: 2px;
-      margin-top: -1px;
-      background: #c5cad3;
-      z-index: 0;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 36, 110, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 36, 110, .045) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(70% 60% at 50% 45%, #000 20%, transparent 80%);
+      pointer-events: none;
     }
 
-    .wf-node .num {
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 120px 28px 96px;
+      width: 100%;
+    }
+
+    .hero .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: .14em;
+      color: var(--brand);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 14px;
+    }
+
+    .hero h1 {
+      margin-top: 26px;
+      font-family: "Noto Serif SC", "Noto Sans SC", serif;
+      font-size: clamp(36px, 6.4vw, 60px);
+      font-weight: 700;
+      line-height: 1.22;
+      letter-spacing: .01em;
+      color: var(--brand-900);
+    }
+
+    .hero .sub {
+      margin-top: 14px;
+      font-size: clamp(17px, 2.4vw, 22px);
+      color: var(--muted);
+      max-width: 620px;
+    }
+
+    .hero-stats {
+      margin-top: 44px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      max-width: 620px;
+    }
+
+    .hero-stat {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-stat .n {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--brand);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hero-stat .l {
+      margin-top: 6px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .hero .byline {
+      margin-top: 44px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .hero .byline strong { color: var(--ink); font-weight: 600; }
+
+    .hero-cue {
+      position: absolute;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      z-index: 1;
+      font-size: 12px;
+      letter-spacing: .1em;
+      color: var(--faint);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-cue::after {
+      content: "";
+      width: 1px;
+      height: 26px;
+      background: linear-gradient(#c4c0bb, transparent);
+    }
+
+    /* 通栏区块 */
+    .band {
+      padding: 96px 0;
+      scroll-margin-top: 60px;
+    }
+
+    .band--white { background: #fff; }
+    .band--tint { background: linear-gradient(180deg, #f1f4f9 0%, #fbfcfe 100%); }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    .sec-head { margin-bottom: 40px; max-width: 720px; }
+
+    .sec-num {
+      display: block;
+      font-family: "Noto Serif SC", serif;
+      font-size: clamp(56px, 8vw, 88px);
+      font-weight: 700;
+      line-height: .9;
+      letter-spacing: .02em;
+      color: #dfe4ee;
+    }
+
+
+    .sec-head h2 {
+      margin: 10px 0 12px;
+      font-family: "Noto Serif SC", "Noto Sans SC", serif;
+      font-size: clamp(26px, 3.6vw, 36px);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--brand-900);
+    }
+
+    .sec-head p {
+      font-size: 17px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    /* 01 工时 */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat .n {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.05;
+      color: var(--brand);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat.est .n { color: var(--warn); }
+    .stat.act .n { color: var(--ok); }
+
+    .stat .l { margin-top: 8px; font-size: 14px; color: var(--muted); }
+
+    .charts {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .chart-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px 20px 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .chart-card.up {
+      background: linear-gradient(180deg, #f3faf7 0%, #fff 60%);
+      border-color: #cfe3da;
+    }
+
+    .chart-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .02em;
+    }
+
+    .chart-card.up h3 { color: var(--ok); }
+    .chart-box { height: 260px; width: 100%; }
+
+    /* 02 工作流 */
+    .lanes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .lane {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px 26px 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .lane.bug { border-color: #ead9bf; }
+
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #e7ebf3;
+      color: var(--brand);
+    }
+
+    .lane.bug .tag { background: #f7f1e8; color: var(--warn); }
+
+    .lane-desc {
+      margin: 12px 0 4px;
+      font-size: 14.5px;
+      color: var(--muted);
+    }
+
+    .steps { list-style: none; }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .steps li:last-child { border-bottom: 0; }
+
+    .steps .num {
       width: 28px;
       height: 28px;
       border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      background: #8092b7;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
+      margin-top: 3px;
     }
 
-    .wf-lane.req .wf-node .num { background: #00246e; }
-    .wf-lane.bug .wf-node .num { background: #b3701a; }
+    .lane.bug .num { background: var(--warn); }
 
-    .wf-node .txt {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-1);
-      line-height: 1.35;
-      position: relative;
-      z-index: 1;
+    .steps .txt { font-weight: 600; line-height: 1.5; }
+    .steps .sub { font-size: 13.5px; color: var(--faint); line-height: 1.6; }
+
+    .steps li.key .txt { color: var(--ok); }
+    .steps li.key .num {
+      background: var(--ok);
+      box-shadow: 0 0 0 4px rgba(18, 128, 92, .14);
     }
 
-    .wf-node .sub {
-      margin-top: 4px;
-      font-size: 11px;
-      color: var(--text-3);
-      line-height: 1.4;
-      position: relative;
-      z-index: 1;
+    .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .callout {
+      border-radius: 16px;
+      padding: 20px 22px;
+      font-size: 15px;
+      line-height: 1.7;
     }
 
-    .wf-node.key {
-      background: var(--brand-050);
-      border: 1px solid #b3bed4;
-      border-radius: 10px;
-      margin: 0 4px;
-    }
-
-    .wf-node.key .num {
-      background: #12805c;
-      box-shadow: 0 0 0 4px rgba(18, 128, 92, .16);
-    }
-
-    .wf-node.key .txt {
-      color: #12805c;
-    }
-
-    .wf-node.key .badge {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #12805c;
-      background: #e7f2ef;
-      border-radius: 999px;
-      padding: 2px 6px;
-    }
-
-    .wf-foot {
-      border-radius: 10px;
-      border: 1px solid #b7d9cb;
-      background: linear-gradient(90deg, #e7f2ef 0%, #f7fbf9 100%);
-      padding: 12px 16px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .wf-foot-label {
-      flex-shrink: 0;
+    .callout .t {
+      display: block;
       font-size: 12px;
       font-weight: 700;
-      color: #12805c;
-      background: #fff;
-      border: 1px solid #b7d9cb;
-      border-radius: 999px;
-      padding: 4px 10px;
-      margin-top: 1px;
+      letter-spacing: .1em;
+      margin-bottom: 6px;
     }
 
-    .wf-foot-text {
-      font-size: 13px;
-      line-height: 1.65;
-      color: #2f5f4d;
-    }
-
-    .wf-foot-text strong {
-      color: #12805c;
-    }
-
-    .wf-key {
-      border-radius: 10px;
-      border: 1px solid #b3bed4;
-      background: linear-gradient(90deg, #eef1f7 0%, #fbfcfe 100%);
-      padding: 10px 16px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .wf-key-label {
-      flex-shrink: 0;
-      font-size: 12px;
-      font-weight: 700;
-      color: #00246e;
-      background: #fff;
-      border: 1px solid #b3bed4;
-      border-radius: 999px;
-      padding: 4px 10px;
-      margin-top: 1px;
-    }
-
-    .wf-key-text {
-      font-size: 13px;
-      line-height: 1.65;
+    .callout.key {
+      background: #eef1f7;
+      border: 1px solid #d4dae6;
       color: #31406b;
     }
 
-    .wf-key-text strong {
-      color: #00246e;
-    }
+    .callout.key .t { color: var(--brand); }
 
-    /* Prompt */
-    .prompt-page {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      height: 100%;
-      min-height: 0;
-    }
-
-    .prompt-lead {
-      font-size: 14px;
-      line-height: 1.55;
-      color: var(--text-2);
-      flex-shrink: 0;
-    }
-
-    .prompt-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      align-items: stretch;
-      flex: 0 0 auto;
-    }
-
-    .prompt-card {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      height: 100%;
-      min-height: 0;
-      background: #fff;
-    }
-
-    .prompt-card.weak { border-color: #e0d2b8; background: #faf6ef; }
-    .prompt-card.strong { border-color: #b7d9cb; background: #e7f2ef; }
-    .prompt-card.weak h3 { color: #a67c2d; font-size: 15px; }
-    .prompt-card.strong h3 { color: #12805c; font-size: 15px; }
-
-    .prompt-card .prompt-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .prompt-card .prompt-tag {
-      font-size: 11px;
-      font-weight: 700;
-      border-radius: 999px;
-      padding: 2px 8px;
-    }
-
-    .prompt-card.weak .prompt-tag {
-      color: #a67c2d;
-      background: #f3ead8;
-    }
-
-    .prompt-card.strong .prompt-tag {
-      color: #12805c;
+    .callout.diff {
       background: #e7f2ef;
-    }
-
-    .prompt-card pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: inherit;
-      font-size: 14px;
-      line-height: 1.55;
-      color: var(--text-1);
-      background: rgba(255,255,255,.55);
-      border: 1px solid rgba(0, 36, 110, .08);
-      padding: 8px 12px;
-      border-radius: 6px;
-    }
-
-    .prompt-points {
-      display: grid;
-      gap: 6px;
-    }
-
-    .prompt-points .pt {
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--text-2);
-      padding-left: 10px;
-      border-left: 3px solid #d6dae1;
-    }
-
-    .prompt-card.weak .prompt-points .pt { border-left-color: #c9a46c; }
-    .prompt-card.strong .prompt-points .pt { border-left-color: #12805c; }
-
-    .prompt-points .pt strong {
-      color: var(--text-1);
-      font-weight: 700;
-    }
-
-    .prompt-recipes {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      flex-shrink: 0;
-      border: 1px solid #b3bed4;
-      border-radius: 8px;
-      background: #eef1f7;
-      overflow: hidden;
-    }
-
-    .prompt-recipe {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 12px 14px;
-      border: 0;
-      background: transparent;
-    }
-
-    .prompt-recipe + .prompt-recipe {
-      border-top: 1px solid #d4dae6;
-    }
-
-    .prompt-recipe h4 {
-      flex-shrink: 0;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--brand);
-      margin-bottom: 0;
-    }
-
-    .prompt-recipe .prompt-points .pt {
-      border-left-color: #00246e;
-    }
-
-    .prompt-more {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .prompt-more .pm {
-      border: 1px solid #b7d9cb;
-      border-radius: 8px;
-      background: #e7f2ef;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .prompt-more .pm h4 {
-      font-size: 13px;
-      font-weight: 700;
-      color: #12805c;
-    }
-
-    .prompt-more .pm p {
-      font-size: 13px;
-      line-height: 1.6;
+      border: 1px solid #cfe3da;
       color: #2f5f4d;
     }
 
-    /* Timeline + tabs */
-    .timeline { display: grid; gap: 4px; }
+    .callout.diff .t { color: var(--ok); }
 
-    .tl-item {
+    /* 03 提示词 */
+    .prompt-grid {
       display: grid;
-      grid-template-columns: 92px 1fr;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
-    .tl-item:last-child { border-bottom: 0; }
-    .tl-step { font-size: 12px; font-weight: 700; color: var(--brand); }
-    .tl-text { font-size: 13px; line-height: 1.55; color: var(--text-2); }
+    .prompt-card {
+      border-radius: 16px;
+      padding: 24px 26px;
+      border: 1px solid var(--line);
+    }
 
-    .case-prompt {
-      margin: 0;
+    .prompt-card.weak { background: #faf6ef; border-color: #ead9bf; }
+    .prompt-card.strong { background: #e7f2ef; border-color: #cfe3da; }
+
+    .prompt-card h3 { font-size: 17px; margin-bottom: 14px; }
+    .prompt-card.weak h3 { color: var(--warn); }
+    .prompt-card.strong h3 { color: var(--ok); }
+
+    .prompt-card pre, .quote {
       white-space: pre-wrap;
       word-break: break-word;
       font-family: inherit;
-      font-size: 12.5px;
-      line-height: 1.55;
-      color: var(--text-1);
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px 14px;
-      max-height: 240px;
-      overflow: auto;
+      font-size: 15px;
+      line-height: 1.7;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
     }
 
-    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pts { display: grid; gap: 10px; }
+
+    .pts p {
+      font-size: 14.5px;
+      color: var(--muted);
+      padding-left: 12px;
+      border-left: 3px solid #d6d3d1;
+    }
+
+    .prompt-card.weak .pts p { border-left-color: #c9a46c; }
+    .prompt-card.strong .pts p { border-left-color: var(--ok); }
+    .pts strong { color: var(--ink); }
+
+    .recipes { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .recipe {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .recipe h4 {
+      font-size: 15px;
+      color: var(--brand);
+      margin-bottom: 12px;
+    }
+
+    .recipe .pts p { border-left-color: var(--brand); }
+
+    /* 案例 */
+    .quote {
+      background: #fff;
+      border-left: 3px solid var(--brand);
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0 28px;
+    }
+
+    .flow .chip {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+    }
+
+    .flow .chip em {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 13px;
+      color: var(--faint);
+    }
+
+    .flow .arrow {
+      align-self: center;
+      color: #c4c0bb;
+      font-size: 14px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 
     .tabs button {
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
       background: #fff;
-      color: var(--text-2);
+      color: var(--muted);
       font: inherit;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 2px;
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: 999px;
       cursor: pointer;
+      transition: all .18s ease;
     }
+
+    .tabs button:hover { border-color: #b9c3d8; color: var(--brand); }
 
     .tabs button.active {
       border-color: var(--brand);
-      color: var(--brand);
-      background: var(--brand-050);
+      color: #fff;
+      background: var(--brand);
       font-weight: 600;
     }
 
     .viewer {
-      flex: 1;
-      min-height: 0;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: #f4f6f9;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f4f1ec;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px;
+      padding: 14px;
       overflow: hidden;
+    }
+
+    .viewer img {
+      width: 100%;
+      height: 460px;
+      object-fit: contain;
+      object-position: center;
+      cursor: zoom-in;
     }
 
     .compare {
-      display: grid;
+      display: none;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      flex: 1;
-      height: 100%;
-      min-height: 0;
+      gap: 14px;
     }
 
     .compare-col {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
       overflow: hidden;
+      background: #fff;
     }
 
-    .compare-col.old { border-color: #e0d2b8; }
-    .compare-col.new { border-color: #b7d9cb; }
+    .compare-col.old { border-color: #ead9bf; }
+    .compare-col.new { border-color: #cfe3da; }
 
     .compare-head {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      padding: 8px 12px;
-      flex-shrink: 0;
-    }
-
-    .compare-col.old .compare-head { background: #faf6ef; }
-    .compare-col.new .compare-head { background: #e7f2ef; }
-
-    .compare-head h3 {
+      align-items: center;
+      padding: 10px 14px;
       font-size: 14px;
-      font-weight: 700;
     }
 
-    .compare-col.old .compare-head h3 { color: #a67c2d; }
-    .compare-col.new .compare-head h3 { color: #12805c; }
+    .compare-head h3 { font-size: 15px; }
+    .compare-col.old .compare-head { background: #faf6ef; color: var(--warn); }
+    .compare-col.new .compare-head { background: #e7f2ef; color: var(--ok); }
 
     .compare-head span {
       font-size: 11px;
       font-weight: 700;
+      padding: 3px 10px;
       border-radius: 999px;
-      padding: 2px 8px;
-    }
-
-    .compare-col.old .compare-head span {
-      color: #a67c2d;
-      background: #f3ead8;
-    }
-
-    .compare-col.new .compare-head span {
-      color: #12805c;
-      background: #d8ebe3;
+      background: rgba(255,255,255,.75);
     }
 
     .compare-col .viewer {
       border: 0;
       border-radius: 0;
-      padding: 8px;
-      background: #f4f6f9;
     }
 
-    .compare-col .viewer img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
-    }
+    .compare-col .viewer img { height: 400px; }
 
-    .case-wrap {
+    .defect-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-      gap: 16px;
-      height: 100%;
-      min-height: 0;
-      transition: grid-template-columns .28s ease;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+      gap: 24px;
+      align-items: start;
     }
 
-    .case-wrap.is-closed {
-      grid-template-columns: 0fr minmax(0, 1fr);
-      gap: 0;
-    }
+    .defect-grid .viewer img { height: 380px; }
 
-    .case-drawer {
-      min-width: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .case-drawer .panel {
-      height: 100%;
-    }
-
-    .case-drawer-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-shrink: 0;
-    }
-
-    .case-drawer-bar strong {
+    .note {
+      margin-top: 12px;
       font-size: 13px;
-      color: var(--brand);
+      color: var(--faint);
     }
 
-    .case-drawer-open {
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text-2);
-      font: inherit;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .case-drawer-close {
-      border: 1px solid var(--brand);
-      background: var(--brand);
-      color: #fff;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 2px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .case-drawer-close:hover {
-      background: var(--brand-900);
-      border-color: var(--brand-900);
-    }
-
-    .case-drawer-open:hover {
-      border-color: var(--brand);
-      color: var(--brand);
-    }
-
-    .case-main {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .case-main .panel {
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    #caseSingle {
-      position: relative;
-      flex: 1;
-      min-height: 0;
-      width: 100%;
-    }
-
-    #caseSingle img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
-    }
-
-    .case-drawer-open {
-      display: none;
-      align-self: flex-start;
-    }
-
-    .case-wrap.is-closed .case-drawer-open {
-      display: inline-flex;
-      border-color: #12805c;
-      background: #12805c;
-      color: #fff;
-      font-weight: 700;
-    }
-
-    .case-wrap.is-closed .case-drawer-open:hover {
-      border-color: #0e6b4d;
-      background: #0e6b4d;
-      color: #fff;
-    }
-
-    .defect-note {
-      flex-shrink: 0;
-      font-size: 12px;
-      line-height: 1.55;
-      color: var(--text-3);
-      padding: 8px 10px;
-      background: #fafbfd;
-      border: 1px dashed var(--border);
-      border-radius: 4px;
-    }
-
+    /* 06 展望 */
     .skill-line {
-      text-align: center;
-      font-size: clamp(22px, 3vw, 32px);
+      font-family: "Noto Serif SC", serif;
+      font-size: clamp(22px, 3vw, 30px);
       font-weight: 700;
       color: var(--brand);
-      padding: 8px 0 6px;
+      margin-bottom: 28px;
+      letter-spacing: .04em;
     }
 
-    .skill-lead {
-      text-align: center;
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text-2);
-      margin-bottom: 18px;
-    }
-
-    .skill-lead strong {
-      color: var(--brand);
-      font-weight: 700;
-    }
-
-    .skill-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      max-width: 920px;
-      margin: 0 auto;
-    }
+    .skill-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
     .skill-item {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px 16px;
       background: #fff;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 0;
-    }
-
-    .skill-item .skill-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--brand);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 26px 28px;
+      box-shadow: var(--shadow);
     }
 
     .skill-item h3 {
-      font-size: 16px;
-      font-weight: 700;
+      font-size: 19px;
+      margin: 10px 0 12px;
       color: var(--brand);
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
-    .skill-item p {
-      font-size: 13px;
-      line-height: 1.65;
-      color: var(--text-2);
-    }
-
-    .skill-item p strong {
-      color: var(--brand);
-      font-weight: 700;
-    }
-
-    .skill-item ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 6px;
-    }
-
-    .skill-item li {
-      font-size: 12.5px;
-      line-height: 1.55;
-      color: var(--text-2);
-      padding-left: 14px;
-      position: relative;
-    }
-
-    .skill-item li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: .55em;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--brand);
-    }
-
-    .skill-item li strong {
-      color: var(--brand);
-      font-weight: 600;
-    }
+    .skill-item p { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+    .skill-item ul { padding-left: 18px; color: var(--muted); font-size: 14.5px; }
+    .skill-item li { margin: 8px 0; }
+    .skill-item li strong, .skill-item p strong { color: var(--brand); font-weight: 600; }
 
     .skill-note {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px dashed var(--border);
-      font-size: 12px;
-      line-height: 1.55;
-      color: var(--text-3);
-    }
-
-    .skill-item.accent {
-      background: #e7f2ef;
-      border-color: #b7d9cb;
-    }
-
-    .skill-item.accent .skill-num {
-      background: #12805c;
-    }
-
-    .skill-item.accent h3 {
-      color: #12805c;
-    }
-
-    .skill-item.primary {
-      background: linear-gradient(180deg, #eef1f7 0%, #fff 100%);
-      border-color: #b3bed4;
-    }
-
-    .skill-item.primary .skill-num {
-      background: #00246e;
-    }
-
-    .skill-item.primary h3 {
-      color: #00246e;
-    }
-
-    .skill-item.advanced {
-      background: linear-gradient(180deg, #f5f6f8 0%, #fff 100%);
-      border-color: #dcdfe6;
-    }
-
-    .skill-item.advanced .skill-num {
-      background: #9aa3b2;
-    }
-
-    .skill-item.advanced h3 {
-      color: #5c6573;
-    }
-
-    .skill-item.advanced p strong {
-      color: #5c6573;
-      font-weight: 700;
-    }
-
-    .skill-item.advanced li::before {
-      background: #9aa3b2;
-    }
-
-    .skill-item.advanced li strong {
-      color: #5c6573;
-      font-weight: 600;
-    }
-
-    .skill-item .skill-tag {
-      align-self: flex-start;
-      font-size: 11px;
-      font-weight: 700;
-      color: #00246e;
-      background: #e6eaf3;
-      border-radius: 999px;
-      padding: 2px 8px;
-      margin-bottom: 2px;
-    }
-
-    .skill-item.advanced .skill-tag {
-      color: #7a8494;
-      background: #eef0f3;
-    }
-
-    .skill-takeaway {
-      margin: 18px auto 0;
-      max-width: 920px;
-      border-radius: 10px;
-      border: 1px solid #b3bed4;
-      background: linear-gradient(90deg, #eef1f7 0%, #fbfcfe 100%);
-      padding: 12px 16px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      font-weight: 700;
-      color: #00246e;
-    }
-
-    .skill-takeaway span {
-      flex-shrink: 0;
-      font-size: 12px;
-      font-weight: 700;
-      color: #fff;
-      background: #00246e;
-      border-radius: 999px;
-      padding: 4px 10px;
-    }
-
-    .bottombar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      width: 1040px;
-      margin: 0 auto 14px;
-      padding: 10px 16px;
-      background: var(--surface);
-      border: 1px solid rgba(0, 36, 110, .08);
-      border-top: 1px solid var(--border);
-      border-radius: 0 0 10px 10px;
-      box-shadow: 0 18px 40px rgba(0, 27, 86, .06);
-    }
-
-    .dots {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: center;
-      flex: 1;
-    }
-
-    .dot {
-      border: 0;
-      background: transparent;
-      color: var(--text-3);
-      font: inherit;
-      font-size: 11px;
-      padding: 6px 8px;
-      border-radius: 2px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .dot:hover { background: var(--brand-050); color: var(--brand); }
-    .dot.active {
-      background: var(--brand);
-      color: #fff;
-      font-weight: 600;
-    }
-
-    .nav-btns { display: flex; gap: 8px; }
-    .nav-btns button {
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text-1);
-      font: inherit;
       font-size: 13px;
-      padding: 8px 14px;
-      border-radius: 2px;
-      cursor: pointer;
+      color: var(--faint);
+      border-top: 1px dashed var(--line);
+      padding-top: 12px;
+      margin-top: 14px;
     }
-    .nav-btns button:hover { border-color: var(--brand); color: var(--brand); }
-    .nav-btns button:disabled { opacity: .35; cursor: not-allowed; }
+
+    .skill-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brand);
+      background: #e7ebf3;
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+
+    .footer {
+      background: #fff;
+      border-top: 1px solid var(--line);
+    }
+
+    .footer .wrap {
+      padding-top: 28px;
+      padding-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--faint);
+    }
 
     .lightbox {
       position: fixed;
       inset: 0;
-      background: rgba(0, 27, 86, .72);
+      background: rgba(28, 25, 23, .78);
       display: none;
       align-items: center;
       justify-content: center;
@@ -1338,7 +711,9 @@
       padding: 24px;
       cursor: zoom-out;
     }
+
     .lightbox.show { display: flex; }
+
     .lightbox img {
       max-width: min(1200px, 96vw);
       max-height: 92vh;
@@ -1346,405 +721,306 @@
       background: #fff;
     }
 
-    .fs-exit {
-      display: none;
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 40;
-      border: 1px solid rgba(255,255,255,.35);
-      background: rgba(0, 27, 86, .72);
-      color: #fff;
-      font: inherit;
-      font-size: 12px;
-      padding: 8px 12px;
-      border-radius: 2px;
-      cursor: pointer;
+    @media (max-width: 900px) {
+      .band { padding: 64px 0; }
+      .charts, .lanes, .notes, .prompt-grid, .recipes, .defect-grid, .compare, .skill-list, .stat-strip {
+        grid-template-columns: 1fr;
+      }
+      .viewer img { height: 300px; }
+      .compare-col .viewer img { height: 260px; }
+      .defect-grid .viewer img { height: 280px; }
+      .hero-inner { padding: 104px 24px 88px; }
+      .hero-stats { grid-template-columns: 1fr; gap: 10px; }
+      .hero-stat { display: flex; align-items: baseline; gap: 12px; padding: 12px 16px; }
+      .hero-stat .n { font-size: 24px; }
+      .hero-stat .l { margin-top: 0; }
+      .hero-cue { display: none; }
+      .flow .arrow { display: none; }
     }
-    body.fs .fs-exit { display: block; }
-    body.fs .viewport { background: #0b1a3a; }
-    body.fs .topbar,
-    body.fs .bottombar { display: none; }
-    body.fs .app { grid-template-rows: 1fr; }
-    body.fs .stage {
-      width: 1088px;
-      height: 100%;
-      margin: 0;
-    }
-    body.fs .deck {
-      border-radius: 0;
-      border: 0;
-    }
-    body.fs .stage { cursor: pointer; }
   </style>
 </head>
 <body>
-  <div class="viewport" id="viewport">
-  <div class="app" id="app">
-    <header class="topbar">
-      <h1>AI辅助开发分享-以产品配置系统为例</h1>
-      <button type="button" class="icon-btn" id="btnFs">全屏</button>
-    </header>
+  <nav class="site-nav">
+    <div class="inner">
+      <span class="brand">MEDBOT</span>
+      <a href="#hours">工时节省</a>
+      <a href="#flow">工作流</a>
+      <a href="#prompt">提示词</a>
+      <a href="#ui">UI 案例</a>
+      <a href="#bug">缺陷案例</a>
+      <a href="#next">展望</a>
+    </div>
+  </nav>
 
-    <main class="stage" id="stage">
-      <!-- 封面 -->
-      <section class="slide active" data-id="cover">
-        <div class="deck cover">
-          <div class="cover-inner">
-            <h2 class="cover-title">AI辅助开发分享<br/>以产品配置系统为例</h2>
-            <div class="cover-line"></div>
-            <div class="cover-meta">
-              <div><strong>微创机器人</strong></div>
-              <div>向婷婷</div>
-            </div>
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="eyebrow">微创机器人 · 内部技术分享</span>
+      <h1>AI 辅助开发分享<br />以产品配置系统为例</h1>
+      <p class="sub">用固定工作流和清晰提示词，把 AI 真正用进存量业务系统的日常开发里。</p>
+      <p class="byline"><strong>向婷婷</strong> · 微创机器人</p>
+    </div>
+    <a class="hero-cue" href="#hours">向下阅读</a>
+  </header>
+
+  <section class="band band--white" id="hours">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2>AI 辅助开发工时节省情况</h2>
+        <p>在 Cursor 辅助下，一阶段 31 项需求实际投入 22 个工作日；同范围按条估时约 49 个工作日。</p>
+      </div>
+      <div class="stat-strip">
+        <div class="stat">
+          <div class="n">31</div>
+          <div class="l">一阶段开发需求（项）</div>
+        </div>
+        <div class="stat est">
+          <div class="n">49</div>
+          <div class="l">常规非 AI 预估（工作日）</div>
+        </div>
+        <div class="stat act">
+          <div class="n">22</div>
+          <div class="l">Cursor 辅助实际（工作日）</div>
+        </div>
+      </div>
+      <div class="charts">
+        <div class="chart-card">
+          <h3>工时对比（工作日）</h3>
+          <div class="chart-box" id="chartDays"></div>
+        </div>
+        <div class="chart-card up">
+          <h3>工时节省</h3>
+          <div class="chart-box" id="chartGain"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="flow">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2>需求与缺陷修复流程</h2>
+        <p>就产品配置系统项目而言，主要有两种使用场景，需求实现和缺陷修复。良好的实现效果依赖于完善的工作流 + 清晰的提示词。</p>
+      </div>
+      <div class="lanes">
+        <div class="lane">
+          <span class="tag">需求实现 · 从 0 到 1</span>
+          <p class="lane-desc">拿到需求先圈清边界，再让 AI 出方案；确认方案后再开发。</p>
+          <ol class="steps">
+            <li><span class="num">1</span><div><div class="txt">输入需求</div><div class="sub">把做什么、期望效果描述清楚</div></div></li>
+            <li class="key"><span class="num">2</span><div><div class="txt">明确边界</div><div class="sub">若改动涉及现有功能，只改动那些部分</div></div></li>
+            <li><span class="num">3</span><div><div class="txt">给出方案</div><div class="sub">AI 先给实现方案，不急着改代码</div></div></li>
+            <li class="key"><span class="num">4</span><div><div class="txt">确认方案</div><div class="sub">逐条核对细节与实施步骤</div></div></li>
+            <li><span class="num">5</span><div><div class="txt">实现</div><div class="sub">按确认的方案实施</div></div></li>
+            <li><span class="num">6</span><div><div class="txt">验收</div><div class="sub">对照最初需求，确认是否完成</div></div></li>
+          </ol>
+        </div>
+        <div class="lane bug">
+          <span class="tag">缺陷修复 · 从模糊到准确</span>
+          <p class="lane-desc">修缺陷最怕改一处坏三处。先把问题说清楚，让 AI 定位原因并给方案，确认后再改。</p>
+          <ol class="steps">
+            <li><span class="num">1</span><div><div class="txt">描述缺陷</div><div class="sub">期望 vs 实际，把差距说清楚</div></div></li>
+            <li><span class="num">2</span><div><div class="txt">原因 + 修复方案</div><div class="sub">AI 定位原因、给出修复方案</div></div></li>
+            <li class="key"><span class="num">3</span><div><div class="txt">确认方案</div><div class="sub">核对原因与修复范围，确认后再改</div></div></li>
+            <li><span class="num">4</span><div><div class="txt">修复</div><div class="sub">只修复必要处，避免带出新问题</div></div></li>
+            <li><span class="num">5</span><div><div class="txt">验收</div><div class="sub">测试修复效果，确保修复完成，也没改坏别的</div></div></li>
+          </ol>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="callout key">
+          <span class="t">共同关键</span>
+          逐条核对方案细节与实施步骤，确认后再动手。这是避免返工最重要的一步。
+        </div>
+        <div class="callout diff">
+          <span class="t">两者区别</span>
+          需求是<strong>从 0 到 1</strong>，缺陷是<strong>从模糊到准确</strong>。需求先<strong>明确边界</strong>，缺陷先<strong>讲清哪里错了</strong>。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--white" id="prompt">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2>提示词强弱对比</h2>
+        <p>具体实施上，对于同一个目标，不同的提示词实现的效果可能相距甚远。</p>
+      </div>
+      <div class="prompt-grid">
+        <div class="prompt-card weak">
+          <h3>弱 · 未明确边界和效果</h3>
+          <pre>把类目详情页面的 UI 优化一下</pre>
+          <div class="pts">
+            <p><strong>没说改哪：</strong>详情页整页都能动，范围太大</p>
+            <p><strong>没说不能动：</strong>树展开、接口这些业务逻辑可能被顺手改掉</p>
+            <p><strong>没说做成什么样：</strong>「优化」没有验收标准，改完后发现达不到预期</p>
           </div>
         </div>
-      </section>
-
-      <!-- 1 效率 -->
-      <section class="slide" data-id="result">
-        <div class="deck">
-          <div class="kicker">1. 工时节省</div>
-          <h2 class="title">AI 辅助开发工时节省情况</h2>
-          <div class="body one">
-            <div class="panel" style="display:flex;flex-direction:column;min-height:0">
-              <div class="result-grid">
-                <div class="kpi kpi-scope">
-                  <div class="n">31</div>
-                  <div class="l">一阶段开发需求（项）</div>
-                </div>
-                <div class="charts-row">
-                  <div class="chart-card">
-                    <h3>工时对比（工作日）</h3>
-                    <div class="chart-box" id="chartDays"></div>
-                  </div>
-                  <div class="chart-card chart-up">
-                    <h3>工时节省</h3>
-                    <div class="chart-box" id="chartGain"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="prompt-card strong">
+          <h3>强 · 明确边界 + 预期效果</h3>
+          <pre>修改类目详情页的数据展示方式。只改类目详情页的 UI 展示部分，树结构展开功能等业务逻辑接口不变。数据换为 table 列表展示，类目列居左，操作列居中，操作按钮和类目名称添加 hover 效果，hover 时字体变为主题色。</pre>
+          <div class="pts">
+            <p><strong>先确定修改范围：</strong>只改详情页展示，树结构和接口不动</p>
+            <p><strong>明确修改方式和预期效果：</strong>改成 table、列对齐、hover 时字体变为主题色</p>
           </div>
         </div>
-      </section>
-
-      <!-- 2 工作流 -->
-      <section class="slide" data-id="workflow">
-        <div class="deck">
-          <div class="kicker">2. 工作流</div>
-          <h2 class="title">需求与缺陷修复流程</h2>
-          <div class="body one">
-            <div class="wf">
-              <div class="wf-lead">就产品配置系统项目而言，主要有两种使用场景，需求实现和缺陷修复。良好的实现效果依赖于完善的工作流+清晰的提示词 </div>
-              <div class="wf-lane req">
-                <div class="wf-lane-head">
-                  <span class="wf-tag">需求实现 · 从 0 到 1</span>
-                  <span class="wf-lane-desc">拿到需求先圈清边界，再让 AI 出方案；确认方案后再开发。</span>
-                </div>
-                <div class="wf-track">
-                  <div class="wf-node">
-                    <div class="num">1</div>
-                    <div class="txt">输入需求</div>
-                    <div class="sub">把做什么、期望效果描述清楚</div>
-                  </div>
-                  <div class="wf-node key">
-                    <span class="badge">关键</span>
-                    <div class="num">2</div>
-                    <div class="txt">明确边界</div>
-                    <div class="sub">若改动涉及现有功能,只改动那些部分</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">3</div>
-                    <div class="txt">给出方案</div>
-                    <div class="sub">AI 先给实现方案，不急着改代码</div>
-                  </div>
-                  <div class="wf-node key">
-                    <span class="badge">关键</span>
-                    <div class="num">4</div>
-                    <div class="txt">确认方案</div>
-                    <div class="sub">逐条核对细节与实施步骤</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">5</div>
-                    <div class="txt">实现</div>
-                    <div class="sub">按确认的方案实施</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">6</div>
-                    <div class="txt">验收</div>
-                    <div class="sub">对照最初需求，确认是否完成</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="wf-lane bug">
-                <div class="wf-lane-head">
-                  <span class="wf-tag">缺陷修复 · 从模糊到准确</span>
-                  <span class="wf-lane-desc">修缺陷最怕改一处坏三处。先把问题说清楚,让 AI 定位原因并给方案，确认后再改。</span>
-                </div>
-                <div class="wf-track">
-                  <div class="wf-node">
-                    <div class="num">1</div>
-                    <div class="txt">描述缺陷</div>
-                    <div class="sub">期望 vs 实际，把差距说清楚</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">2</div>
-                    <div class="txt">原因 + 修复方案</div>
-                    <div class="sub">AI 定位原因、给出修复方案</div>
-                  </div>
-                  <div class="wf-node key">
-                    <span class="badge">关键</span>
-                    <div class="num">3</div>
-                    <div class="txt">确认方案</div>
-                    <div class="sub">核对原因与修复范围，确认后再改</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">4</div>
-                    <div class="txt">修复</div>
-                    <div class="sub">只修复必要处，避免带出新问题</div>
-                  </div>
-                  <div class="wf-node">
-                    <div class="num">5</div>
-                    <div class="txt">验收</div>
-                    <div class="sub">测试修复效果，确保修复完成，也没改坏别的</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="wf-key">
-                <div class="wf-key-label">共同关键</div>
-                <div class="wf-key-text"><strong>逐条核对方案细节与实施步骤，确认后再动手</strong>。这是避免返工最重要的一步。</div>
-              </div>
-
-              <div class="wf-foot">
-                <div class="wf-foot-label">区别</div>
-                <div class="wf-foot-text">
-                  需求是<strong>从 0 到 1</strong>，缺陷是<strong>从模糊到准确</strong>。需求先<strong>明确边界</strong>，缺陷先<strong>讲清哪里错了</strong>。
-                </div>
-              </div>
-            </div>
+      </div>
+      <div class="recipes">
+        <div class="recipe">
+          <h4>做需求，可以这样问</h4>
+          <div class="pts">
+            <p><strong>开发哪一部分？</strong>新增什么模块</p>
+            <p><strong>哪些不能动？</strong>树结构、接口这些业务逻辑不动</p>
+            <p><strong>需要什么样的效果：</strong>列表怎么排、hover 什么效果</p>
+            <p><strong>有效果示例图更好：</strong>能够准确描述预期效果</p>
           </div>
         </div>
-      </section>
-
-      <!-- 3 提示词 -->
-      <section class="slide" data-id="prompt">
-        <div class="deck">
-          <div class="kicker">3. 提示词</div>
-          <h2 class="title">提示词强弱对比</h2>
-          <div class="body one">
-            <div class="prompt-page">
-              <div class="prompt-lead">具体实施上，对于同一个目标，不同的提示词实现的效果可能相距甚远。</div>
-              <div class="prompt-grid">
-                <div class="prompt-card weak">
-                  <div class="prompt-head">
-                    <h3>弱 · 未明确边界和效果</h3>
-                    <span class="prompt-tag">很难达到预期效果</span>
-                  </div>
-                  <pre>把类目详情页面的 UI 优化一下</pre>
-                  <div class="prompt-points">
-                    <div class="pt"><strong>没说改哪：</strong>详情页整页都能动，范围太大</div>
-                    <div class="pt"><strong>没说不能动：</strong>树展开、接口这些业务逻辑可能被顺手改掉</div>
-                    <div class="pt"><strong>没说做成什么样：</strong>「优化」没有验收标准，改完后发现达不到预期</div>
-                  </div>
-                </div>
-                <div class="prompt-card strong">
-                  <div class="prompt-head">
-                    <h3>强 · 明确边界 + 预期效果</h3>
-                    <span class="prompt-tag">一次能贴近预期效果</span>
-                  </div>
-                  <pre>修改类目详情页的数据展示方式。只改类目详情页的 UI 展示部分，树结构展开功能等业务逻辑接口不变。数据换为 table 列表展示，类目列居左，操作列居中，操作按钮和类目名称添加 hover 效果，hover 时字体变为主题色。</pre>
-                  <div class="prompt-points">
-                    <div class="pt"><strong>先确定修改范围：</strong>只改详情页展示，树结构和接口不动</div>
-                    <div class="pt"><strong>明确修改方式和预期效果：</strong>改成 table、列对齐、hover 时字体变为主题色</div>
-                  </div>
-                </div>
-              </div>
-              <div class="prompt-recipes">
-                <div class="prompt-recipe">
-                  <h4>做需求，可以这样问</h4>
-                  <div class="prompt-points">
-                    <div class="pt"><strong>开发哪一部分？</strong>新增什么模块</div>
-                    <div class="pt"><strong>哪些不能动？</strong>树结构、接口这些业务逻辑不动</div>
-                    <div class="pt"><strong>需要什么样的效果</strong>列表怎么排、hover 什么效果</div>
-                    <div class="pt"><strong>有效果示例图/示例更好：</strong>能够准确描述预期效果</div>
-                  </div>
-                </div>
-                <div class="prompt-recipe">
-                  <h4>修缺陷，可以这样问</h4>
-                  <div class="prompt-points">
-                    <div class="pt"><strong>期望是什么？</strong>本来期望的样式、布局应该怎样</div>
-                     <div class="pt"><strong>缺陷原因？</strong>布局错位、和整体风格不搭等</div>
-                    <div class="pt"><strong>附上具体正确/错误样例：</strong>哪一个接口返回格式应该是什么样，那一个按钮点击展现效果不对</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="recipe">
+          <h4>修缺陷，可以这样问</h4>
+          <div class="pts">
+            <p><strong>期望是什么？</strong>本来期望的样式、布局应该怎样</p>
+            <p><strong>缺陷原因？</strong>布局错位、和整体风格不搭等</p>
+            <p><strong>附上具体正确 / 错误样例：</strong>哪一个接口返回格式应该是什么样，哪一个按钮点击展现效果不对</p>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  </section>
 
-      <!-- 4 案例 -->
-      <section class="slide" data-id="case">
-        <div class="deck">
-          <div class="kicker">4. 案例 · UI 优化需求</div>
-          <h2 class="title">UI 优化需求：按工作流完整跑通</h2>
-          <div class="body one">
-            <div class="case-wrap" id="caseWrap">
-            <div class="case-drawer">
-            <div class="panel" style="display:flex;flex-direction:column;gap:12px;min-height:0">
-              <div class="case-drawer-bar">
-                <strong>输入需求（生成规范 + 原型）</strong>
-                <button type="button" class="case-drawer-close" id="caseDrawerClose">收起提示词</button>
-              </div>
-              <div class="tl-item" style="display:block;border:0;padding:0">
-                <pre class="case-prompt">帮我把产品配置系统的 UI 改一下。先别动业务代码，出个设计规范和可点原型给我，确认后再分页落地。
+  <section class="band band--tint" id="ui">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2>UI 优化需求：按工作流完整跑通</h2>
+        <p>从一句需求出发，先出设计规范和可点原型，确认后再分页落地。</p>
+      </div>
+      <pre class="quote">帮我把产品配置系统的 UI 改一下。先别动业务代码，出个设计规范和可点原型给我，确认后再分页落地。
 
 功能、接口、路由都别变，只调视觉和交互。主色 #00246e，别用蓝紫渐变；圆角小一点，阴影只在浮层用。
 范围就登录、用户管理、类目管理、价格管理这几页。</pre>
-              </div>
-              <div class="timeline">
-                <div class="tl-item"><div class="tl-step">给出方案</div><div class="tl-text">输出设计规范 + 可点原型</div></div>
-                <div class="tl-item"><div class="tl-step">确认方案</div><div class="tl-text">核对主色、布局、卡片与页面范围</div></div>
-                <div class="tl-item"><div class="tl-step">分模块实现</div><div class="tl-text">登录 → 布局 / 列表页分批落地</div></div>
-                <div class="tl-item"><div class="tl-step">验收</div><div class="tl-text">功能与视觉效果核对</div></div>
-              </div>
-            </div>
-            </div>
-            <div class="case-main">
-            <button type="button" class="case-drawer-open" id="caseDrawerOpen">提示词</button>
-            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
-              <div class="tabs" id="caseStageTabs">
-                <button type="button" data-stage="design" class="active">规范 / 原型</button>
-                <button type="button" data-stage="compare">新老对比</button>
-              </div>
-              <div class="tabs" id="casePageTabs">
-                <button type="button" data-page="spec" class="active" id="caseSpecTab">设计规范</button>
-                <button type="button" data-page="login">登录</button>
-                <button type="button" data-page="users">用户管理</button>
-                <button type="button" data-page="category">类目管理</button>
-                <button type="button" data-page="price">价格管理</button>
-              </div>
-              <div class="viewer" id="caseSingle">
-                <img id="caseViewer" src="images/spec-tokens.png" alt="案例配图" data-zoom />
-              </div>
-              <div class="compare" id="caseCompare" style="display:none">
-                <div class="compare-col old">
-                  <div class="compare-head">
-                    <h3>老系统</h3>
-                    <span>改前</span>
-                  </div>
-                  <div class="viewer">
-                    <img id="caseOldImg" src="images/old-users.png" alt="老系统" data-zoom />
-                  </div>
-                </div>
-                <div class="compare-col new">
-                  <div class="compare-head">
-                    <h3>新系统</h3>
-                    <span>改后</span>
-                  </div>
-                  <div class="viewer">
-                    <img id="caseNewImg" src="images/new-users.png" alt="新系统" data-zoom />
-                  </div>
-                </div>
-              </div>
-            </div>
-            </div>
-            </div>
+      <div class="flow">
+        <span class="chip">输入需求 <em>一句话讲清范围</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">给出方案 <em>设计规范 + 可点原型</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">确认方案 <em>主色、布局、页面范围</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">分模块实现 <em>登录 → 布局 / 列表页</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">验收 <em>功能与视觉核对</em></span>
+      </div>
+      <div class="panel">
+        <div class="tabs" id="caseStageTabs">
+          <button type="button" data-stage="design" class="active">规范 / 原型</button>
+          <button type="button" data-stage="compare">新老对比</button>
+        </div>
+        <div class="tabs" id="casePageTabs">
+          <button type="button" data-page="spec" class="active" id="caseSpecTab">设计规范</button>
+          <button type="button" data-page="login">登录</button>
+          <button type="button" data-page="users">用户管理</button>
+          <button type="button" data-page="category">类目管理</button>
+          <button type="button" data-page="price">价格管理</button>
+        </div>
+        <div class="viewer" id="caseSingle">
+          <img id="caseViewer" src="images/spec-tokens.png" alt="案例配图" data-zoom />
+        </div>
+        <div class="compare" id="caseCompare">
+          <div class="compare-col old">
+            <div class="compare-head"><h3>老系统</h3><span>改前</span></div>
+            <div class="viewer"><img id="caseOldImg" src="images/old-users.png" alt="老系统" data-zoom /></div>
+          </div>
+          <div class="compare-col new">
+            <div class="compare-head"><h3>新系统</h3><span>改后</span></div>
+            <div class="viewer"><img id="caseNewImg" src="images/new-users.png" alt="新系统" data-zoom /></div>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  </section>
 
-      <!-- 5 缺陷案例 -->
-      <section class="slide" data-id="defect">
-        <div class="deck">
-          <div class="kicker">5. 案例 · 缺陷修复</div>
-          <h2 class="title">修缺陷：从模糊到准确的一次实战</h2>
-          <div class="body two">
-            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
-              <div class="tl-item" style="display:block;border:0;padding:0">
-                <div class="tl-step" style="margin-bottom:6px">输入缺陷（现象 + 截图）</div>
-                <pre class="case-prompt">产品名称在产品配置列表里显示异常：期望是跟随系统语言环境显示对应语言的产品名，实际切换语言后仍是默认语言。
+  <section class="band" id="bug">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <h2>修缺陷：从模糊到准确的一次实战</h2>
+        <p>产品名称没跟随语言切换。把现象、复现步骤和截图一次说清，再让 AI 定位原因。</p>
+      </div>
+      <div class="flow">
+        <span class="chip">描述现象 <em>期望 vs 实际</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">贴截图 <em>复现步骤 + 接口响应</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">缩小范围 <em>只改名称映射处</em></span>
+        <span class="arrow">→</span>
+        <span class="chip">迭代验收 <em>复测语言切换</em></span>
+      </div>
+      <div class="defect-grid">
+        <div>
+          <pre class="quote">产品名称在产品配置列表里显示异常：期望是跟随系统语言环境显示对应语言的产品名，实际切换语言后仍是默认语言。
 
 复现步骤：登录 → 产品配置 → 产品列表 → 切换语言 → 产品名称未跟随。
 涉及界面与接口响应两处，账号：admin / 测试环境，截图见右侧。</pre>
-              </div>
-              <div class="timeline">
-                <div class="tl-item"><div class="tl-step">描述现象</div><div class="tl-text">期望 vs 实际，一句话说清差距</div></div>
-                <div class="tl-item"><div class="tl-step">贴截图</div><div class="tl-text">截图 + 复现步骤 + 接口响应</div></div>
-                <div class="tl-item"><div class="tl-step">缩小范围</div><div class="tl-text">只改名称映射处，不动列表逻辑</div></div>
-                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换，测试通过</div></div>
-              </div>
-            </div>
-            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
-              <div class="tabs" id="defectTabs">
-                <button type="button" data-ev="scene" class="active">现象</button>
-                <button type="button" data-ev="evidence">截图</button>
-              </div>
-              <div class="viewer">
-                <img id="defectViewer" src="images/07-defect-i18n-product-name.png" alt="缺陷案例配图" data-zoom />
-              </div>
-              <div class="defect-note">现象 → 截图，截图越全定位越快；只改必要处，避免改一处坏三处。</div>
-            </div>
+          <div class="callout key">
+            <span class="t">经验</span>
+            截图越全定位越快；只改必要处，避免改一处坏三处。
           </div>
         </div>
-      </section>
-
-      <!-- 6 展望 -->
-      <section class="slide" data-id="next">
-        <div class="deck">
-          <div class="kicker">6. 展望</div>
-          <h2 class="title">未来持续探索AI使用新方向，学习新的AI使用技能，进一步提升工作效率</h2>
-          <div class="body one">
-            <div class="panel" style="display:flex;flex-direction:column;justify-content:center;min-height:0">
-              <div class="skill-line">经验 → 规则 → 复用</div>
-              <!-- <div class="skill-lead">把这条闭环跑起来：<strong>经验 → 规则 → 复用</strong>。多 Agent、知识库 / RAG 作为进阶能力，在真实项目里按需启用。</div> -->
-              <div class="skill-list">
-                <div class="skill-item primary">
-                  <div class="skill-num">1</div>
-                  <h3>沉淀通用规则，封装为 Skill / 规则包</h3>
-                  <p>把高频复用的内容固化下来，形成可移植的资产：</p>
-                  <ul>
-                    <li><strong>UI 风格规范</strong>：组件库选型、颜色体系、间距栅格、字体标尺，写进规则文件，新项目一键加载</li>
-                    <li><strong>提问模板</strong>：需求分析、代码生成、Bug 定位、代码审查，沉淀标准提问格式，减少对齐损耗</li>
-                    <li><strong>发版检查清单</strong>：环境变量、接口地址、构建产物、回滚预案，固化为可执行检查项</li>
-                  </ul>
-                  <p class="skill-note">做法：每做完一个项目，抽取出可复用的部分，归入个人 / 团队规则库；新项目启动直接加载，不用从零磨合。</p>
-                </div>
-                <div class="skill-item advanced">
-                  <div class="skill-num">2</div>
-                  <span class="skill-tag">高级用法</span>
-                  <h3>探索多 Agent 协作，提升复杂任务处理能力</h3>
-                  <p>单 Agent 有上下文窗口和注意力局限，复杂任务容易顾此失彼，多 Agent 的价值是分而治之：</p>
-                  <ul>
-                    <li><strong>拆分策略</strong>：需求分析、方案设计、代码实现、代码审查，各司其职，串并行结合</li>
-                    <li><strong>协作方式</strong>：串行接力（设计→编码→审查）、并行分治（前后端同步）、交叉验证（对比结果找差异）</li>
-                    <li><strong>知识库 + RAG</strong>：接口文档、业务约定、技术选型建进知识库，执行前先检索，减少幻觉和反复对齐</li>
-                  </ul>
-                </div>
-              </div>
-              
-            </div>
+        <div class="panel">
+          <div class="tabs" id="defectTabs">
+            <button type="button" data-ev="scene" class="active">现象</button>
+            <button type="button" data-ev="evidence">截图</button>
           </div>
+          <div class="viewer">
+            <img id="defectViewer" src="images/07-defect-i18n-product-name.png" alt="缺陷案例配图" data-zoom />
+          </div>
+          <p class="note">现象 → 截图，配合复现步骤与接口响应，一次把问题说清。</p>
         </div>
-      </section>
-    </main>
-
-    <footer class="bottombar">
-      <div class="nav-btns">
-        <button type="button" id="btnPrev">上一页</button>
       </div>
-      <div class="dots" id="dots"></div>
-      <div class="nav-btns">
-        <button type="button" id="btnNext">下一页</button>
-      </div>
-    </footer>
-  </div>
-  </div>
+    </div>
+  </section>
 
-  <button type="button" class="fs-exit" id="btnFsExit">退出全屏</button>
+  <section class="band band--white" id="next">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <h2>未来持续探索 AI 使用新方向</h2>
+        <p>学习新的 AI 使用技能，进一步提升工作效率。</p>
+      </div>
+      <div class="skill-line">经验 → 规则 → 复用</div>
+      <div class="skill-list">
+        <div class="skill-item">
+          <span class="skill-tag">基础建设</span>
+          <h3>沉淀通用规则，封装为 Skill / 规则包</h3>
+          <p>把高频复用的内容固化下来，形成可移植的资产：</p>
+          <ul>
+            <li><strong>UI 风格规范</strong>：组件库选型、颜色体系、间距栅格、字体标尺，写进规则文件，新项目一键加载</li>
+            <li><strong>提问模板</strong>：需求分析、代码生成、Bug 定位、代码审查，沉淀标准提问格式，减少对齐损耗</li>
+            <li><strong>发版检查清单</strong>：环境变量、接口地址、构建产物、回滚预案，固化为可执行检查项</li>
+          </ul>
+          <p class="skill-note">做法：每做完一个项目，抽取出可复用的部分，归入个人 / 团队规则库；新项目启动直接加载，不用从零磨合。</p>
+        </div>
+        <div class="skill-item">
+          <span class="skill-tag">高级用法</span>
+          <h3>探索多 Agent 协作，提升复杂任务处理能力</h3>
+          <p>单 Agent 有上下文窗口和注意力局限，复杂任务容易顾此失彼，多 Agent 的价值是分而治之：</p>
+          <ul>
+            <li><strong>拆分策略</strong>：需求分析、方案设计、代码实现、代码审查，各司其职，串并行结合</li>
+            <li><strong>协作方式</strong>：串行接力（设计→编码→审查）、并行分治（前后端同步）、交叉验证（对比结果找差异）</li>
+            <li><strong>知识库 + RAG</strong>：接口文档、业务约定、技术选型建进知识库，执行前先检索，减少幻觉和反复对齐</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>微创机器人 · 产品配置系统</span>
+      <span>向婷婷</span>
+    </div>
+  </footer>
 
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <img alt="" />
@@ -1752,118 +1028,33 @@
 
   <script>
     (() => {
-      const app = document.getElementById('app');
-      const stage = document.getElementById('stage');
-      const dotsEl = document.getElementById('dots');
-      const btnPrev = document.getElementById('btnPrev');
-      const btnNext = document.getElementById('btnNext');
-      const btnFs = document.getElementById('btnFs');
-      const btnFsExit = document.getElementById('btnFsExit');
-      const lightbox = document.getElementById('lightbox');
-      const lbImg = lightbox.querySelector('img');
-
-      const DESIGN = { w: 1088, h: 780 };
-
-      function fitBoard() {
-        const scale = Math.min(window.innerWidth / DESIGN.w, window.innerHeight / DESIGN.h);
-        app.style.width = DESIGN.w + 'px';
-        app.style.height = DESIGN.h + 'px';
-        app.style.transform = `translate(-50%, -50%) scale(${Math.max(scale, 0.2)})`;
-      }
-
-      function nativeFsEl() {
-        return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement || null;
-      }
-
-      function afterFsLayout() {
-        fitBoard();
-        requestAnimationFrame(() => {
-          fitBoard();
-          chartDays?.resize();
-          chartGain?.resize();
-        });
-      }
-
-      function applyFsClass(on) {
-        document.body.classList.toggle('fs', on);
-        btnFs.textContent = on ? '退出全屏' : '全屏';
-        afterFsLayout();
-      }
-
-      fitBoard();
-      window.addEventListener('resize', () => {
-        fitBoard();
-        chartDays?.resize();
-        chartGain?.resize();
-      });
-      window.addEventListener('orientationchange', () => setTimeout(fitBoard, 80));
-
-      let index = 0;
       let chartDays;
       let chartGain;
-      let chartsReady = false;
-      const slides = () => [...stage.querySelectorAll('.slide')];
-      const labels = {
-        cover: '封面',
-        result: '1 工时',
-        workflow: '2 工作流',
-        prompt: '3 提示词',
-        case: '4 案例·UI需求',
-        defect: '5 案例·缺陷',
-        next: '6 展望',
-      };
-
-      function rebuildDots() {
-        const list = slides();
-        dotsEl.innerHTML = '';
-        list.forEach((s, i) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'dot' + (i === index ? ' active' : '');
-          b.textContent = labels[s.dataset.id] || s.dataset.id;
-          b.addEventListener('click', () => go(i));
-          dotsEl.appendChild(b);
-        });
-      }
-
-      function render() {
-        const list = slides();
-        index = Math.max(0, Math.min(index, list.length - 1));
-        list.forEach((s, i) => s.classList.toggle('active', i === index));
-        rebuildDots();
-        btnPrev.disabled = index <= 0;
-        btnNext.disabled = index >= list.length - 1;
-        if (list[index]?.dataset.id === 'result') {
-          requestAnimationFrame(() => initResultCharts());
-        }
-      }
 
       function initResultCharts() {
         if (typeof echarts === 'undefined') return;
         const daysEl = document.getElementById('chartDays');
         const gainEl = document.getElementById('chartGain');
         if (!daysEl || !gainEl) return;
-
         if (!chartDays) chartDays = echarts.init(daysEl);
         if (!chartGain) chartGain = echarts.init(gainEl);
 
         chartDays.setOption({
           grid: { left: 16, right: 88, top: 20, bottom: 36, containLabel: true },
-          legend: { show: false },
           tooltip: { show: false },
           xAxis: {
             type: 'value',
             name: '工作日',
             nameLocation: 'end',
             nameGap: 8,
-            nameTextStyle: { color: '#8a93a2', fontSize: 12 },
+            nameTextStyle: { color: '#78716c', fontSize: 12 },
             min: 0,
             max: 60,
             interval: 20,
-            splitLine: { lineStyle: { color: '#eef1f7', type: 'dashed' } },
+            splitLine: { lineStyle: { color: '#e7e5e4', type: 'dashed' } },
             axisLine: { show: false },
             axisTick: { show: false },
-            axisLabel: { color: '#8a93a2', fontSize: 12 },
+            axisLabel: { color: '#78716c', fontSize: 12 },
           },
           yAxis: {
             type: 'category',
@@ -1876,187 +1067,69 @@
               width: 118,
               overflow: 'break',
               align: 'right',
-              formatter: (value) => value,
               color: (value) => (value === 'Cursor 辅助实际' ? '#12805c' : '#a67c2d'),
             },
           },
-          series: [
-            {
-              type: 'bar',
-              barWidth: 28,
-              data: [
-                {
-                  value: 22,
-                  itemStyle: { color: '#12805c', borderRadius: [0, 6, 6, 0] },
-                  label: {
-                    show: true,
-                    position: 'right',
-                    distance: 10,
-                    color: '#12805c',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    formatter: '{c} 工作日',
-                  },
-                },
-                {
-                  value: 49,
-                  itemStyle: { color: '#c9a46c', borderRadius: [0, 6, 6, 0] },
-                  label: {
-                    show: true,
-                    position: 'right',
-                    distance: 10,
-                    color: '#a67c2d',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    formatter: '{c} 工作日',
-                  },
-                },
-              ],
-            },
-          ],
+          series: [{
+            type: 'bar',
+            barWidth: 28,
+            data: [
+              {
+                value: 22,
+                itemStyle: { color: '#12805c', borderRadius: [0, 6, 6, 0] },
+                label: { show: true, position: 'right', distance: 10, color: '#12805c', fontSize: 14, fontWeight: 700, formatter: '{c} 工作日' },
+              },
+              {
+                value: 49,
+                itemStyle: { color: '#c9a46c', borderRadius: [0, 6, 6, 0] },
+                label: { show: true, position: 'right', distance: 10, color: '#a67c2d', fontSize: 14, fontWeight: 700, formatter: '{c} 工作日' },
+              },
+            ],
+          }],
         });
 
         chartGain.setOption({
           tooltip: { show: false },
-          series: [
-            {
-              type: 'gauge',
-              startAngle: 210,
-              endAngle: -30,
-              min: 0,
-              max: 100,
-              radius: '88%',
-              center: ['50%', '58%'],
-              progress: {
-                show: true,
-                width: 16,
-                roundCap: true,
-                itemStyle: { color: '#12805c' },
-              },
-              axisLine: {
-                roundCap: true,
-                lineStyle: {
-                  width: 16,
-                  color: [[1, '#d8ebe3']],
-                },
-              },
-              axisTick: { show: false },
-              splitLine: { show: false },
-              axisLabel: { show: false },
-              pointer: { show: false },
-              anchor: { show: false },
-              title: {
-                show: true,
-                offsetCenter: [0, '68%'],
-                color: '#3d7a64',
-                fontSize: 13,
-                fontWeight: 600,
-              },
-              detail: {
-                valueAnimation: true,
-                offsetCenter: [0, '8%'],
-                formatter: '{value}%',
-                color: '#12805c',
-                fontSize: 38,
-                fontWeight: 700,
-              },
-              data: [{ value: 55, name: '工时节省' }],
-            },
-          ],
+          series: [{
+            type: 'gauge',
+            startAngle: 210,
+            endAngle: -30,
+            min: 0,
+            max: 100,
+            radius: '88%',
+            center: ['50%', '58%'],
+            progress: { show: true, width: 16, roundCap: true, itemStyle: { color: '#12805c' } },
+            axisLine: { roundCap: true, lineStyle: { width: 16, color: [[1, '#d8ebe3']] } },
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            pointer: { show: false },
+            anchor: { show: false },
+            title: { show: true, offsetCenter: [0, '68%'], color: '#3d7a64', fontSize: 13, fontWeight: 600 },
+            detail: { valueAnimation: true, offsetCenter: [0, '8%'], formatter: '{value}%', color: '#12805c', fontSize: 38, fontWeight: 700 },
+            data: [{ value: 55, name: '工时节省' }],
+          }],
         });
 
         chartDays.resize();
         chartGain.resize();
-        chartsReady = true;
       }
 
-      function isPresenting() {
-        return document.body.classList.contains('fs') || !!nativeFsEl();
+      const siteNav = document.querySelector('.site-nav');
+      const heroEl = document.querySelector('.hero');
+      function syncNav() {
+        if (!siteNav || !heroEl) return;
+        siteNav.classList.toggle('solid', window.scrollY > heroEl.offsetHeight - 80);
       }
+      syncNav();
+      window.addEventListener('scroll', syncNav, { passive: true });
 
-      function go(i) { index = i; render(); }
-      function next() { go(index + 1); }
-      function prev() { go(index - 1); }
-
-      btnPrev.addEventListener('click', prev);
-      btnNext.addEventListener('click', next);
-
-      function enterFs() {
-        if (nativeFsEl()) {
-          applyFsClass(true);
-          return;
-        }
-        const el = document.documentElement;
-        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-        if (!req) {
-          applyFsClass(true);
-          return;
-        }
-        try {
-          const p = req.call(el);
-          if (p && typeof p.catch === 'function') {
-            p.catch(() => applyFsClass(true));
-          }
-        } catch (_) {
-          applyFsClass(true);
-        }
-      }
-
-      function exitFs() {
-        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-        if (nativeFsEl() && exit) {
-          try {
-            const p = exit.call(document);
-            if (p && typeof p.catch === 'function') p.catch(() => applyFsClass(false));
-          } catch (_) {
-            applyFsClass(false);
-          }
-          return;
-        }
-        applyFsClass(false);
-      }
-
-      function toggleFs() {
-        if (document.body.classList.contains('fs') || nativeFsEl()) exitFs();
-        else enterFs();
-      }
-
-      btnFs.addEventListener('click', (e) => { e.preventDefault(); toggleFs(); });
-      btnFsExit.addEventListener('click', (e) => { e.preventDefault(); exitFs(); });
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
-          e.preventDefault(); next();
-        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-          e.preventDefault(); prev();
-        } else if (e.key === 'f' || e.key === 'F') {
-          e.preventDefault(); toggleFs();
-        } else if (e.key === 'Escape') {
-          if (lightbox.classList.contains('show')) lightbox.classList.remove('show');
-          else if (document.body.classList.contains('fs') || nativeFsEl()) exitFs();
-        }
+      window.addEventListener('load', initResultCharts);
+      window.addEventListener('resize', () => {
+        syncNav();
+        chartDays?.resize();
+        chartGain?.resize();
       });
-
-      ['fullscreenchange', 'webkitfullscreenchange', 'MSFullscreenChange'].forEach((ev) => {
-        document.addEventListener(ev, () => applyFsClass(!!nativeFsEl()));
-      });
-
-      let wheelLock = false;
-      window.addEventListener('wheel', (e) => {
-        if (!isPresenting()) return;
-        e.preventDefault();
-        if (wheelLock) return;
-        const dy = e.deltaY || e.deltaX;
-        if (Math.abs(dy) < 8) return;
-        wheelLock = true;
-        if (dy > 0) next();
-        else prev();
-        setTimeout(() => { wheelLock = false; }, 420);
-      }, { passive: false });
-
-      function isNavControl(el) {
-        return !!el.closest('button, a, input, textarea, select, .tabs, .lightbox, .fs-exit');
-      }
 
       const caseGallery = {
         design: {
@@ -2084,17 +1157,7 @@
       const caseOldImg = document.getElementById('caseOldImg');
       const caseNewImg = document.getElementById('caseNewImg');
 
-      const caseWrap = document.getElementById('caseWrap');
-      const caseDrawerClose = document.getElementById('caseDrawerClose');
-      const caseDrawerOpen = document.getElementById('caseDrawerOpen');
-
-      function setCaseDrawer(open) {
-        if (!caseWrap) return;
-        caseWrap.classList.toggle('is-closed', !open);
-      }
-
       function refreshCaseViewer() {
-        if (casePageTabs) casePageTabs.style.display = 'flex';
         if (caseSpecTab) caseSpecTab.style.display = caseStage === 'design' ? '' : 'none';
         if (caseStage === 'compare') {
           if (casePage === 'spec') casePage = 'login';
@@ -2111,8 +1174,7 @@
         if (caseCompare) caseCompare.style.display = 'none';
         if (caseSingle) caseSingle.style.display = 'flex';
         if (!caseViewer) return;
-        const map = caseGallery.design || {};
-        caseViewer.src = map[casePage] || map.spec;
+        caseViewer.src = (caseGallery.design || {})[casePage] || caseGallery.design.spec;
       }
 
       caseStageTabs?.addEventListener('click', (e) => {
@@ -2121,7 +1183,6 @@
         caseStageTabs.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         caseStage = btn.dataset.stage;
-        if (caseStage === 'compare') setCaseDrawer(false);
         refreshCaseViewer();
       });
 
@@ -2136,27 +1197,12 @@
 
       refreshCaseViewer();
 
-      caseDrawerClose?.addEventListener('click', () => {
-        setCaseDrawer(false);
-        caseStage = 'compare';
-        casePage = 'login';
-        caseStageTabs?.querySelectorAll('button').forEach((b) => {
-          b.classList.toggle('active', b.dataset.stage === 'compare');
-        });
-        casePageTabs?.querySelectorAll('button').forEach((b) => {
-          b.classList.toggle('active', b.dataset.page === 'login');
-        });
-        refreshCaseViewer();
-      });
-      caseDrawerOpen?.addEventListener('click', () => setCaseDrawer(true));
-
       const defectGallery = {
         scene: 'images/07-defect-i18n-product-name.png',
         evidence: 'images/07b-defect-i18n-evidence2.png',
       };
       const defectTabs = document.getElementById('defectTabs');
       const defectViewer = document.getElementById('defectViewer');
-
       defectTabs?.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-ev]');
         if (!btn) return;
@@ -2165,21 +1211,19 @@
         if (defectViewer) defectViewer.src = defectGallery[btn.dataset.ev];
       });
 
+      const lightbox = document.getElementById('lightbox');
+      const lbImg = lightbox.querySelector('img');
       document.addEventListener('click', (e) => {
         if (e.target.closest('.lightbox')) return;
-        if (isPresenting()) {
-          if (isNavControl(e.target)) return;
-          next();
-          return;
-        }
         const img = e.target.closest('img[data-zoom]');
         if (!img) return;
         lbImg.src = img.src;
         lightbox.classList.add('show');
       });
       lightbox.addEventListener('click', () => lightbox.classList.remove('show'));
-
-      render();
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') lightbox.classList.remove('show');
+      });
     })();
   </script>
 </body>
