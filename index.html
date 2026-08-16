@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI辅助开发分享-以产品配置系统为例</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --brand: #00246e;
+      --brand-900: #001b56;
+      --brand-050: #eef1f7;
+      --text-1: #1c2434;
+      --text-2: #525c6b;
+      --text-3: #8a93a2;
+      --border: #e3e6eb;
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --danger: #b42318;
+      --ok: #12805c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: #e8eef6;
+      color: var(--text-1);
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(0, 36, 110, .10), transparent 60%),
+        #e8eef6;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: min(1040px, calc(100% - 48px));
+      margin: 14px auto 0;
+      padding: 12px 18px;
+      background: var(--brand);
+      color: #fff;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .topbar h1 {
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .icon-btn {
+      border: 1px solid rgba(255,255,255,.28);
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover { background: rgba(255,255,255,.1); }
+
+    .stage {
+      position: relative;
+      width: min(1040px, calc(100% - 48px));
+      margin: 0 auto;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: stretch;
+      justify-content: center;
+      opacity: 0;
+      transform: translateX(16px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: none;
+    }
+
+    .deck {
+      width: 100%;
+      height: 100%;
+      background: var(--surface);
+      border: 1px solid rgba(0, 36, 110, .08);
+      border-top: 0;
+      border-radius: 0;
+      padding: 28px 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: auto;
+      box-shadow: 0 18px 40px rgba(0, 27, 86, .08);
+    }
+
+    .kicker {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      color: var(--brand);
+    }
+
+    .title {
+      font-size: clamp(22px, 2.2vw, 28px);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .lead {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-2);
+    }
+
+    .body {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      gap: 16px;
+    }
+
+    .body.one { grid-template-columns: 1fr; }
+    .body.two { grid-template-columns: 1fr 1.05fr; }
+
+    @media (max-width: 960px) {
+      .topbar,
+      .stage,
+      .bottombar {
+        width: calc(100% - 24px);
+      }
+      .deck { padding: 18px 16px 14px; }
+      .body.two { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: #fafbfd;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .panel.media {
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .panel.media img,
+    .viewer img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* Cover */
+    .deck.cover {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background:
+        linear-gradient(165deg, #001b56 0%, #00246e 52%, #003a96 100%);
+      color: #fff;
+      border: 0;
+      border-radius: 0;
+      box-shadow: 0 18px 40px rgba(0, 27, 86, .18);
+    }
+
+    .cover-inner {
+      max-width: 640px;
+      padding: 24px;
+    }
+
+    .cover-title {
+      font-size: clamp(28px, 3.6vw, 40px);
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: .02em;
+    }
+
+    .cover-line {
+      width: 48px;
+      height: 2px;
+      background: rgba(255,255,255,.45);
+      margin: 28px auto;
+    }
+
+    .cover-meta {
+      font-size: 18px;
+      line-height: 1.9;
+      color: rgba(255,255,255,.88);
+    }
+
+    .cover-meta strong {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Metrics */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 960px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 18px 14px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .metric .num {
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 700;
+      color: var(--brand);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .metric .unit {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.4;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+      align-content: stretch;
+    }
+
+    .result-grid .kpi {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    .result-grid .kpi .n {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--brand);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .result-grid .kpi .l {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    .result-grid .kpi.kpi-compare {
+      background: linear-gradient(180deg, #f7f9fc 0%, #fff 100%);
+      border-color: #d6dae1;
+    }
+
+    .result-grid .kpi.kpi-compare .n {
+      font-size: 26px;
+      letter-spacing: .02em;
+    }
+
+    .result-grid .kpi.kpi-compare .n .act {
+      color: #12805c;
+    }
+
+    .result-grid .kpi.kpi-compare .n .sep {
+      color: #b4bac4;
+      font-weight: 500;
+      margin: 0 4px;
+    }
+
+    .result-grid .kpi.kpi-compare .n .est {
+      color: #8a93a2;
+      font-weight: 600;
+    }
+
+    .result-grid .kpi.kpi-up {
+      background: #e7f2ef;
+      border-color: #b7d9cb;
+    }
+
+    .result-grid .kpi.kpi-up .n {
+      color: #12805c;
+    }
+
+    .result-grid .kpi.kpi-up .l {
+      color: #3d7a64;
+    }
+
+    .result-grid .chart-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px 14px 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .result-grid .chart-card.span-2 {
+      grid-column: span 2;
+    }
+
+    .result-grid .chart-card.chart-up {
+      background: linear-gradient(180deg, #f3faf7 0%, #fff 55%);
+      border-color: #b7d9cb;
+    }
+
+    .result-grid .chart-card.chart-up h3 {
+      color: #12805c;
+    }
+
+    .result-grid .chart-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    .result-grid .chart-box {
+      flex: 1;
+      min-height: 200px;
+      width: 100%;
+    }
+
+    @media (max-width: 960px) {
+      .result-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+      }
+      .result-grid .chart-card.span-2 {
+        grid-column: auto;
+      }
+    }
+
+    .formula {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.7;
+      padding: 12px 14px;
+      background: var(--brand-050);
+      border-left: 3px solid var(--brand);
+    }
+
+    /* Workflow swimlanes */
+    .wf {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .wf-lane {
+      flex: 1;
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .wf-lane-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wf-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .wf-lane.req .wf-tag {
+      background: #e6e9f1;
+      color: var(--brand);
+    }
+
+    .wf-lane.bug .wf-tag {
+      background: #f7f1e8;
+      color: #b3701a;
+    }
+
+    .wf-lane-desc {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    .wf-track {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      flex: 1;
+      min-height: 96px;
+    }
+
+
+    .wf-node {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      padding: 8px 6px;
+    }
+
+    .wf-node + .wf-node::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      margin-top: -1px;
+      background: #c5cad3;
+      z-index: 0;
+    }
+
+    .wf-node .num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: #8092b7;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wf-lane.req .wf-node .num { background: #00246e; }
+    .wf-lane.bug .wf-node .num { background: #b3701a; }
+
+    .wf-node .txt {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-1);
+      line-height: 1.35;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wf-node .sub {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.3;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wf-node.key {
+      background: var(--brand-050);
+      border: 1px solid #b3bed4;
+      border-radius: 10px;
+      margin: 0 4px;
+    }
+
+    .wf-node.key .num {
+      background: #12805c;
+      box-shadow: 0 0 0 4px rgba(18, 128, 92, .16);
+    }
+
+    .wf-node.key .txt {
+      color: #12805c;
+    }
+
+    .wf-node.key .badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #12805c;
+      background: #e7f2ef;
+      border-radius: 999px;
+      padding: 2px 6px;
+    }
+
+    .wf-foot {
+      border-radius: 10px;
+      border: 1px solid #b7d9cb;
+      background: linear-gradient(90deg, #e7f2ef 0%, #f7fbf9 100%);
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .wf-foot-label {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #12805c;
+      background: #fff;
+      border: 1px solid #b7d9cb;
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-top: 1px;
+    }
+
+    .wf-foot-text {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #2f5f4d;
+    }
+
+    .wf-foot-text strong {
+      color: #12805c;
+    }
+
+    @media (max-width: 960px) {
+      .wf-track { flex-wrap: wrap; gap: 8px; }
+      .wf-node { flex: 1 1 40%; }
+      .wf-node + .wf-node::before { display: none; }
+    }
+
+    /* Prompt */
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      height: 100%;
+    }
+
+    @media (max-width: 960px) {
+      .prompt-grid { grid-template-columns: 1fr; }
+    }
+
+    .prompt-card {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .prompt-card.weak { border-top: 3px solid var(--danger); }
+    .prompt-card.strong { border-top: 3px solid var(--brand); }
+    .prompt-card.weak h3 { color: var(--danger); font-size: 13px; }
+    .prompt-card.strong h3 { color: var(--brand); font-size: 13px; }
+
+    .prompt-card pre {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-1);
+      background: var(--brand-050);
+      padding: 12px;
+      border-radius: 2px;
+      overflow: auto;
+    }
+
+    .exp-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .exp-item {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-2);
+    }
+
+    .exp-item strong {
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    /* Timeline + tabs */
+    .timeline { display: grid; gap: 4px; }
+
+    .tl-item {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tl-item:last-child { border-bottom: 0; }
+    .tl-step { font-size: 12px; font-weight: 700; color: var(--brand); }
+    .tl-text { font-size: 13px; line-height: 1.55; color: var(--text-2); }
+
+    .case-prompt {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text-1);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .tabs button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-2);
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--brand-050);
+      font-weight: 600;
+    }
+
+    .viewer {
+      flex: 1;
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    .skill-line {
+      text-align: center;
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 700;
+      color: var(--brand);
+      padding: 12px 0 20px;
+    }
+
+    .skill-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .skill-item {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 18px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-2);
+      background: #fff;
+    }
+
+    .bottombar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: min(1040px, calc(100% - 48px));
+      margin: 0 auto 14px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid rgba(0, 36, 110, .08);
+      border-top: 1px solid var(--border);
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 18px 40px rgba(0, 27, 86, .06);
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .dot {
+      border: 0;
+      background: transparent;
+      color: var(--text-3);
+      font: inherit;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .dot:hover { background: var(--brand-050); color: var(--brand); }
+    .dot.active {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .nav-btns { display: flex; gap: 8px; }
+    .nav-btns button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-1);
+      font: inherit;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    .nav-btns button:hover { border-color: var(--brand); color: var(--brand); }
+    .nav-btns button:disabled { opacity: .35; cursor: not-allowed; }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 27, 86, .72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+    .lightbox.show { display: flex; }
+    .lightbox img {
+      max-width: min(1200px, 96vw);
+      max-height: 92vh;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    body.fs .topbar,
+    body.fs .bottombar { display: none; }
+    body.fs .app {
+      height: 100vh;
+      height: 100dvh;
+      grid-template-rows: 1fr;
+      padding: 0;
+      background: #0b1a3a;
+    }
+    body.fs .stage {
+      width: min(1280px, calc(100% - 48px));
+      height: min(860px, calc(100% - 48px));
+      margin: auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    }
+    body.fs .deck {
+      border-radius: 12px;
+      border: 0;
+      padding: 36px 40px;
+    }
+    body.fs .deck.cover {
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1>AI辅助开发分享-以产品配置系统为例</h1>
+      <button type="button" class="icon-btn" id="btnFs">全屏</button>
+    </header>
+
+    <main class="stage" id="stage">
+      <!-- 封面 -->
+      <section class="slide active" data-id="cover">
+        <div class="deck cover">
+          <div class="cover-inner">
+            <h2 class="cover-title">AI辅助开发分享<br/>以产品配置系统为例</h2>
+            <div class="cover-line"></div>
+            <div class="cover-meta">
+              <div><strong>微创机器人</strong></div>
+              <div>向婷婷</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1 效率 -->
+      <section class="slide" data-id="result">
+        <div class="deck">
+          <div class="kicker">1. 使用 AI 带来的效率提升</div>
+          <h2 class="title">Cursor 辅助下的一阶段交付对比</h2>
+          <div class="body one">
+            <div class="panel" style="display:flex;flex-direction:column;min-height:0">
+              <div class="result-grid">
+                <div class="kpi">
+                  <div class="n">31</div>
+                  <div class="l">一阶段开发需求（项）</div>
+                </div>
+                <div class="kpi kpi-compare">
+                  <div class="n"><span class="est">62</span><span class="sep">→</span><span class="act">22</span></div>
+                  <div class="l">常规预估 → 实际工作日</div>
+                </div>
+                <div class="kpi kpi-up">
+                  <div class="n">约 70%</div>
+                  <div class="l">效率提升</div>
+                </div>
+                <div class="chart-card span-2">
+                  <h3>工时对比（工作日）</h3>
+                  <div class="chart-box" id="chartDays"></div>
+                </div>
+                <div class="chart-card chart-up">
+                  <h3>效率提升</h3>
+                  <div class="chart-box" id="chartGain"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2 工作流 -->
+      <section class="slide" data-id="workflow">
+        <div class="deck">
+          <div class="kicker">2.（1）共通工作流</div>
+          <h2 class="title">需求与缺陷，两条可复制的固定链路</h2>
+          <div class="body one">
+            <div class="wf">
+              <div class="wf-lane req">
+                <div class="wf-lane-head">
+                  <span class="wf-tag">需求实现</span>
+                  <span class="wf-lane-desc">先边界，再动手</span>
+                </div>
+                <div class="wf-track">
+                  <div class="wf-node key">
+                    <span class="badge">关键</span>
+                    <div class="num">1</div>
+                    <div class="txt">定边界</div>
+                    <div class="sub">改什么 / 不改什么</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">2</div>
+                    <div class="txt">API 封装</div>
+                    <div class="sub">接口与落库</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">3</div>
+                    <div class="txt">页面接入</div>
+                    <div class="sub">前端联调</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">4</div>
+                    <div class="txt">UI / 工程化</div>
+                    <div class="sub">展示与规范</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">5</div>
+                    <div class="txt">验收</div>
+                    <div class="sub">对照目标</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wf-lane bug">
+                <div class="wf-lane-head">
+                  <span class="wf-tag">缺陷修复</span>
+                  <span class="wf-lane-desc">先证据，再收敛</span>
+                </div>
+                <div class="wf-track">
+                  <div class="wf-node">
+                    <div class="num">1</div>
+                    <div class="txt">描述现象</div>
+                    <div class="sub">期望 vs 实际</div>
+                  </div>
+                  <div class="wf-node key">
+                    <span class="badge">关键</span>
+                    <div class="num">2</div>
+                    <div class="txt">贴证据</div>
+                    <div class="sub">截图 / 角色 / 接口</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">3</div>
+                    <div class="txt">缩小范围</div>
+                    <div class="sub">只改必要处</div>
+                  </div>
+                  <div class="wf-node">
+                    <div class="num">4</div>
+                    <div class="txt">迭代验收</div>
+                    <div class="sub">复测原路径</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wf-foot">
+                <div class="wf-foot-label">口诀</div>
+                <div class="wf-foot-text">
+                  需求先<strong>定边界</strong>，缺陷先<strong>贴证据</strong>；对齐约束后再改，减少返工。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 提示词 -->
+      <section class="slide" data-id="prompt">
+        <div class="deck">
+          <div class="kicker">2.（2）提示词优化</div>
+          <h2 class="title">同一目标，不同提示词效果相距甚远</h2>
+          <div class="body one">
+            <div class="panel" style="display:flex;flex-direction:column;min-height:0">
+              <div class="prompt-grid">
+                <div class="prompt-card weak">
+                  <h3>弱</h3>
+                  <pre>把类目详情页面的 UI 优化一下</pre>
+                </div>
+                <div class="prompt-card strong">
+                  <h3>强</h3>
+                  <pre>修改类目详情页的数据展示方式。只改类目详情页的 UI 展示部分，树结构展开功能等业务逻辑接口不变。数据换为 table 列表展示，类目列居左，操作列居中，操作按钮和类目名称添加 hover 效果，hover 时字体变为主题色。</pre>
+                </div>
+              </div>
+              <div class="exp-list">
+                <div class="exp-item">
+                  <strong>需求类型：</strong>确定边界（限定操作范围）+ 具体的功能描述 + 清晰实现步骤 + 图片说明（可选）
+                </div>
+                <div class="exp-item">
+                  <strong>缺陷修复：</strong>现象（期望结果 + 实际结果）+ 证据（截图）
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 案例 -->
+      <section class="slide" data-id="case">
+        <div class="deck">
+          <div class="kicker">2.（3）完整案例</div>
+          <h2 class="title">UI 优化：按工作流完整跑通</h2>
+          <div class="body two">
+            <div class="panel" style="display:flex;flex-direction:column;gap:12px;min-height:0">
+              <div class="tl-item" style="display:block;border:0;padding:0">
+                <div class="tl-step" style="margin-bottom:8px">输入需求（生成规范 + 原型）</div>
+                <pre class="case-prompt">先不要直接改业务代码。请基于产品配置系统现有功能，输出 UI 设计规范 + 可点原型。
+
+边界：功能语义不变；登录 / 列表 API 与路由不变；只调整展示与交互层级。
+主题色：主色 #00246e；语义色用暗调；不使用蓝紫渐变。
+布局原则：一屏一个白色承载面；不做卡片套卡片；控件圆角 2px、承载面 4px；阴影仅用于浮层。
+页面范围：登录页、用户管理、类目管理、价格管理等核心页。
+登录页：左右分栏（左品牌区 / 右表单），约 960×520；取消大圆角重阴影，改为 4px + 1px 边框。
+列表页：去掉多余标题卡；操作列收敛为「编辑 + 更多」；表格用主题色 hover / 选中态。
+
+先给出 design-spec 与原型，确认后再分模块落地。</pre>
+              </div>
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-step">给出方案</div><div class="tl-text">输出设计规范 + 可点原型</div></div>
+                <div class="tl-item"><div class="tl-step">确认方案</div><div class="tl-text">核对主色、布局、卡片与页面范围</div></div>
+                <div class="tl-item"><div class="tl-step">分模块实现</div><div class="tl-text">登录 → 布局 / 列表页分批落地</div></div>
+                <div class="tl-item"><div class="tl-step">验收</div><div class="tl-text">功能与视觉走查</div></div>
+              </div>
+            </div>
+            <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
+              <div class="tabs" id="caseStageTabs">
+                <button type="button" data-stage="spec" class="active">设计规范</button>
+                <button type="button" data-stage="proto">原型</button>
+                <button type="button" data-stage="final">成品</button>
+              </div>
+              <div class="tabs" id="casePageTabs">
+                <button type="button" data-page="login" class="active">登录</button>
+                <button type="button" data-page="users">用户管理</button>
+                <button type="button" data-page="category">类目管理</button>
+                <button type="button" data-page="price">价格管理</button>
+              </div>
+              <div class="viewer">
+                <img id="caseViewer" src="images/spec-tokens.png" alt="案例配图" data-zoom />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 展望 -->
+      <section class="slide" data-id="next">
+        <div class="deck">
+          <div class="kicker">4. 未来持续探索</div>
+          <h2 class="title">持续学习新的 AI 使用技能，进一步提升效率</h2>
+          <div class="body one">
+            <div class="panel">
+              <div class="skill-line">经验 → Skill / 规则 → 复用</div>
+              <div class="skill-list">
+                <div class="skill-item">总结通用的规则规范，写进 Skill，方便复用</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottombar">
+      <div class="nav-btns">
+        <button type="button" id="btnPrev">上一页</button>
+      </div>
+      <div class="dots" id="dots"></div>
+      <div class="nav-btns">
+        <button type="button" id="btnNext">下一页</button>
+      </div>
+    </footer>
+  </div>
+
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <img alt="" />
+  </div>
+
+  <script>
+    (() => {
+      const stage = document.getElementById('stage');
+      const dotsEl = document.getElementById('dots');
+      const btnPrev = document.getElementById('btnPrev');
+      const btnNext = document.getElementById('btnNext');
+      const btnFs = document.getElementById('btnFs');
+      const lightbox = document.getElementById('lightbox');
+      const lbImg = lightbox.querySelector('img');
+
+      let index = 0;
+      const slides = () => [...stage.querySelectorAll('.slide')];
+      const labels = {
+        cover: '封面',
+        result: '1 效率',
+        workflow: '2 工作流',
+        prompt: '3 提示词',
+        case: '4 案例',
+        next: '5 展望',
+      };
+
+      function rebuildDots() {
+        const list = slides();
+        dotsEl.innerHTML = '';
+        list.forEach((s, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'dot' + (i === index ? ' active' : '');
+          b.textContent = labels[s.dataset.id] || s.dataset.id;
+          b.addEventListener('click', () => go(i));
+          dotsEl.appendChild(b);
+        });
+      }
+
+      function render() {
+        const list = slides();
+        index = Math.max(0, Math.min(index, list.length - 1));
+        list.forEach((s, i) => s.classList.toggle('active', i === index));
+        rebuildDots();
+        btnPrev.disabled = index <= 0;
+        btnNext.disabled = index >= list.length - 1;
+        if (list[index]?.dataset.id === 'result') {
+          requestAnimationFrame(() => initResultCharts());
+        }
+      }
+
+      let chartDays;
+      let chartGain;
+      let chartsReady = false;
+
+      function initResultCharts() {
+        if (typeof echarts === 'undefined') return;
+        const daysEl = document.getElementById('chartDays');
+        const gainEl = document.getElementById('chartGain');
+        if (!daysEl || !gainEl) return;
+
+        if (!chartDays) chartDays = echarts.init(daysEl);
+        if (!chartGain) chartGain = echarts.init(gainEl);
+
+        chartDays.setOption({
+          grid: { left: 16, right: 88, top: 20, bottom: 36, containLabel: true },
+          legend: { show: false },
+          tooltip: { show: false },
+          xAxis: {
+            type: 'value',
+            name: '工作日',
+            nameLocation: 'end',
+            nameGap: 8,
+            nameTextStyle: { color: '#8a93a2', fontSize: 12 },
+            min: 0,
+            max: 80,
+            interval: 20,
+            splitLine: { lineStyle: { color: '#eef1f7', type: 'dashed' } },
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: { color: '#8a93a2', fontSize: 12 },
+          },
+          yAxis: {
+            type: 'category',
+            data: ['Cursor 辅助实际', '常规非 AI 预估'],
+            axisTick: { show: false },
+            axisLine: { show: false },
+            axisLabel: {
+              fontSize: 13,
+              margin: 14,
+              width: 118,
+              overflow: 'break',
+              align: 'right',
+              formatter: (value) => value,
+              color: (value) => (value === 'Cursor 辅助实际' ? '#12805c' : '#8a93a2'),
+            },
+          },
+          series: [
+            {
+              type: 'bar',
+              barWidth: 28,
+              data: [
+                {
+                  value: 22,
+                  itemStyle: { color: '#12805c', borderRadius: [0, 6, 6, 0] },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    distance: 10,
+                    color: '#12805c',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    formatter: '{c} 工作日',
+                  },
+                },
+                {
+                  value: 62,
+                  itemStyle: { color: '#c5cad3', borderRadius: [0, 6, 6, 0] },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    distance: 10,
+                    color: '#8a93a2',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    formatter: '{c} 工作日',
+                  },
+                },
+              ],
+            },
+          ],
+        });
+
+        chartGain.setOption({
+          tooltip: { show: false },
+          series: [
+            {
+              type: 'gauge',
+              startAngle: 210,
+              endAngle: -30,
+              min: 0,
+              max: 100,
+              radius: '88%',
+              center: ['50%', '58%'],
+              progress: {
+                show: true,
+                width: 16,
+                roundCap: true,
+                itemStyle: { color: '#12805c' },
+              },
+              axisLine: {
+                roundCap: true,
+                lineStyle: {
+                  width: 16,
+                  color: [[1, '#d8ebe3']],
+                },
+              },
+              axisTick: { show: false },
+              splitLine: { show: false },
+              axisLabel: { show: false },
+              pointer: { show: false },
+              anchor: { show: false },
+              title: {
+                show: true,
+                offsetCenter: [0, '68%'],
+                color: '#3d7a64',
+                fontSize: 13,
+                fontWeight: 600,
+              },
+              detail: {
+                valueAnimation: true,
+                offsetCenter: [0, '8%'],
+                formatter: '{value}%',
+                color: '#12805c',
+                fontSize: 38,
+                fontWeight: 700,
+              },
+              data: [{ value: 70, name: '效率提升' }],
+            },
+          ],
+        });
+
+        chartDays.resize();
+        chartGain.resize();
+        chartsReady = true;
+      }
+
+      window.addEventListener('resize', () => {
+        chartDays?.resize();
+        chartGain?.resize();
+      });
+
+      function go(i) { index = i; render(); }
+      function next() { go(index + 1); }
+      function prev() { go(index - 1); }
+
+      btnPrev.addEventListener('click', prev);
+      btnNext.addEventListener('click', next);
+
+      function enterFs() {
+        document.body.classList.add('fs');
+        btnFs.textContent = '退出全屏';
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        try {
+          const p = req?.call(el);
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch (_) {}
+        setTimeout(() => {
+          chartDays?.resize();
+          chartGain?.resize();
+        }, 120);
+      }
+
+      function exitFs() {
+        document.body.classList.remove('fs');
+        btnFs.textContent = '全屏';
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        try {
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            const p = exit?.call(document);
+            if (p && typeof p.catch === 'function') p.catch(() => {});
+          }
+        } catch (_) {}
+        setTimeout(() => {
+          chartDays?.resize();
+          chartGain?.resize();
+        }, 120);
+      }
+
+      function toggleFs() {
+        if (document.body.classList.contains('fs') || document.fullscreenElement) exitFs();
+        else enterFs();
+      }
+
+      btnFs.addEventListener('click', (e) => { e.preventDefault(); toggleFs(); });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+          e.preventDefault(); next();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault(); prev();
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault(); toggleFs();
+        } else if (e.key === 'Escape') {
+          if (lightbox.classList.contains('show')) lightbox.classList.remove('show');
+          else if (document.body.classList.contains('fs')) exitFs();
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+          document.body.classList.remove('fs');
+          btnFs.textContent = '全屏';
+        }
+      });
+
+      const caseGallery = {
+        spec: { tokens: 'images/spec-tokens.png' },
+        proto: {
+          login: 'images/proto-login.png',
+          users: 'images/proto-users.png',
+          category: 'images/proto-category.png',
+          price: 'images/proto-price.png',
+        },
+        final: {
+          login: 'images/final-login.png',
+          users: 'images/final-users.png',
+          category: 'images/final-category.png',
+          price: 'images/final-price.png',
+        },
+      };
+      let caseStage = 'spec';
+      let casePage = 'login';
+      const caseStageTabs = document.getElementById('caseStageTabs');
+      const casePageTabs = document.getElementById('casePageTabs');
+      const caseViewer = document.getElementById('caseViewer');
+
+      function refreshCaseViewer() {
+        if (!caseViewer) return;
+        if (caseStage === 'spec') {
+          casePageTabs.style.display = 'none';
+          caseViewer.src = caseGallery.spec.tokens;
+          return;
+        }
+        casePageTabs.style.display = 'flex';
+        const map = caseGallery[caseStage] || {};
+        caseViewer.src = map[casePage] || map.login;
+      }
+
+      caseStageTabs?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-stage]');
+        if (!btn) return;
+        caseStageTabs.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        caseStage = btn.dataset.stage;
+        refreshCaseViewer();
+      });
+
+      casePageTabs?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-page]');
+        if (!btn) return;
+        casePageTabs.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        casePage = btn.dataset.page;
+        refreshCaseViewer();
+      });
+
+      refreshCaseViewer();
+
+      document.addEventListener('click', (e) => {
+        const img = e.target.closest('img[data-zoom]');
+        if (!img) return;
+        lbImg.src = img.src;
+        lightbox.classList.add('show');
+      });
+      lightbox.addEventListener('click', () => lightbox.classList.remove('show'));
+
+      render();
+    })();
+  </script>
+</body>
+</html>
