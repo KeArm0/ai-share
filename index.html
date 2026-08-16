@@ -1040,6 +1040,16 @@
 
     .case-wrap.is-closed .case-drawer-open {
       display: inline-flex;
+      border-color: #12805c;
+      background: #12805c;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .case-wrap.is-closed .case-drawer-open:hover {
+      border-color: #0e6b4d;
+      background: #0e6b4d;
+      color: #fff;
     }
 
     .defect-note {
@@ -1335,32 +1345,36 @@
       background: #fff;
     }
 
-    body.fs .viewport {
-      background: #0b1a3a;
+    .fs-exit {
+      display: none;
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 40;
+      border: 1px solid rgba(255,255,255,.35);
+      background: rgba(0, 27, 86, .72);
+      color: #fff;
+      font: inherit;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 2px;
+      cursor: pointer;
     }
+    body.fs .fs-exit { display: block; }
+    body.fs .viewport { background: #0b1a3a; }
     body.fs .topbar,
     body.fs .bottombar { display: none; }
-    body.fs .app {
-      width: 1280px;
-      height: 860px;
-      grid-template-rows: 1fr;
-    }
+    body.fs .app { grid-template-rows: 1fr; }
     body.fs .stage {
-      width: 1280px;
+      width: 1088px;
       height: 100%;
       margin: 0;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
     }
     body.fs .deck {
-      border-radius: 12px;
+      border-radius: 0;
       border: 0;
-      padding: 36px 40px;
     }
-    body.fs .deck.cover {
-      border-radius: 12px;
-    }
+    body.fs .stage { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -1538,7 +1552,7 @@
                 <div class="prompt-card strong">
                   <div class="prompt-head">
                     <h3>强 · 明确边界 + 预期效果</h3>
-                    <span class="prompt-tag">一次能贴近</span>
+                    <span class="prompt-tag">一次能贴近预期效果</span>
                   </div>
                   <pre>修改类目详情页的数据展示方式。只改类目详情页的 UI 展示部分，树结构展开功能等业务逻辑接口不变。数据换为 table 列表展示，类目列居左，操作列居中，操作按钮和类目名称添加 hover 效果，hover 时字体变为主题色。</pre>
                   <div class="prompt-points">
@@ -1574,8 +1588,8 @@
       <!-- 4 案例 -->
       <section class="slide" data-id="case">
         <div class="deck">
-          <div class="kicker">4. 案例 · UI 优化</div>
-          <h2 class="title">UI 优化：按工作流完整跑通</h2>
+          <div class="kicker">4. 案例 · UI 优化需求</div>
+          <h2 class="title">UI 优化需求：按工作流完整跑通</h2>
           <div class="body one">
             <div class="case-wrap" id="caseWrap">
             <div class="case-drawer">
@@ -1660,7 +1674,7 @@
                 <div class="tl-item"><div class="tl-step">描述现象</div><div class="tl-text">期望 vs 实际，一句话说清差距</div></div>
                 <div class="tl-item"><div class="tl-step">贴截图</div><div class="tl-text">截图 + 复现步骤 + 接口响应</div></div>
                 <div class="tl-item"><div class="tl-step">缩小范围</div><div class="tl-text">只改名称映射处，不动列表逻辑</div></div>
-                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换路径，通过</div></div>
+                <div class="tl-item"><div class="tl-step">迭代验收</div><div class="tl-text">复测语言切换，测试通过</div></div>
               </div>
             </div>
             <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0">
@@ -1729,6 +1743,8 @@
   </div>
   </div>
 
+  <button type="button" class="fs-exit" id="btnFsExit">退出全屏</button>
+
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <img alt="" />
   </div>
@@ -1741,17 +1757,36 @@
       const btnPrev = document.getElementById('btnPrev');
       const btnNext = document.getElementById('btnNext');
       const btnFs = document.getElementById('btnFs');
+      const btnFsExit = document.getElementById('btnFsExit');
       const lightbox = document.getElementById('lightbox');
       const lbImg = lightbox.querySelector('img');
 
-      const DESIGN = { normal: { w: 1088, h: 780 }, fs: { w: 1280, h: 860 } };
+      const DESIGN = { w: 1088, h: 780 };
 
       function fitBoard() {
-        const mode = document.body.classList.contains('fs') ? DESIGN.fs : DESIGN.normal;
-        const scale = Math.min(window.innerWidth / mode.w, window.innerHeight / mode.h);
-        app.style.width = mode.w + 'px';
-        app.style.height = mode.h + 'px';
+        const scale = Math.min(window.innerWidth / DESIGN.w, window.innerHeight / DESIGN.h);
+        app.style.width = DESIGN.w + 'px';
+        app.style.height = DESIGN.h + 'px';
         app.style.transform = `translate(-50%, -50%) scale(${Math.max(scale, 0.2)})`;
+      }
+
+      function nativeFsEl() {
+        return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement || null;
+      }
+
+      function afterFsLayout() {
+        fitBoard();
+        requestAnimationFrame(() => {
+          fitBoard();
+          chartDays?.resize();
+          chartGain?.resize();
+        });
+      }
+
+      function applyFsClass(on) {
+        document.body.classList.toggle('fs', on);
+        btnFs.textContent = on ? '退出全屏' : '全屏';
+        afterFsLayout();
       }
 
       fitBoard();
@@ -1772,7 +1807,7 @@
         result: '1 效率',
         workflow: '2 工作流',
         prompt: '3 提示词',
-        case: '4 案例·UI',
+        case: '4 案例·UI需求',
         defect: '5 案例·缺陷',
         next: '6 展望',
       };
@@ -1934,6 +1969,10 @@
         chartsReady = true;
       }
 
+      function isPresenting() {
+        return document.body.classList.contains('fs') || !!nativeFsEl();
+      }
+
       function go(i) { index = i; render(); }
       function next() { go(index + 1); }
       function prev() { go(index - 1); }
@@ -1942,46 +1981,47 @@
       btnNext.addEventListener('click', next);
 
       function enterFs() {
-        document.body.classList.add('fs');
-        btnFs.textContent = '退出全屏';
-        fitBoard();
+        if (nativeFsEl()) {
+          applyFsClass(true);
+          return;
+        }
         const el = document.documentElement;
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (!req) {
+          applyFsClass(true);
+          return;
+        }
         try {
-          const p = req?.call(el);
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        } catch (_) {}
-        setTimeout(() => {
-          fitBoard();
-          chartDays?.resize();
-          chartGain?.resize();
-        }, 120);
+          const p = req.call(el);
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => applyFsClass(true));
+          }
+        } catch (_) {
+          applyFsClass(true);
+        }
       }
 
       function exitFs() {
-        document.body.classList.remove('fs');
-        btnFs.textContent = '全屏';
-        fitBoard();
         const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-        try {
-          if (document.fullscreenElement || document.webkitFullscreenElement) {
-            const p = exit?.call(document);
-            if (p && typeof p.catch === 'function') p.catch(() => {});
+        if (nativeFsEl() && exit) {
+          try {
+            const p = exit.call(document);
+            if (p && typeof p.catch === 'function') p.catch(() => applyFsClass(false));
+          } catch (_) {
+            applyFsClass(false);
           }
-        } catch (_) {}
-        setTimeout(() => {
-          fitBoard();
-          chartDays?.resize();
-          chartGain?.resize();
-        }, 120);
+          return;
+        }
+        applyFsClass(false);
       }
 
       function toggleFs() {
-        if (document.body.classList.contains('fs') || document.fullscreenElement) exitFs();
+        if (document.body.classList.contains('fs') || nativeFsEl()) exitFs();
         else enterFs();
       }
 
       btnFs.addEventListener('click', (e) => { e.preventDefault(); toggleFs(); });
+      btnFsExit.addEventListener('click', (e) => { e.preventDefault(); exitFs(); });
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
@@ -1992,21 +2032,30 @@
           e.preventDefault(); toggleFs();
         } else if (e.key === 'Escape') {
           if (lightbox.classList.contains('show')) lightbox.classList.remove('show');
-          else if (document.body.classList.contains('fs')) exitFs();
+          else if (document.body.classList.contains('fs') || nativeFsEl()) exitFs();
         }
       });
 
-      document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) {
-          document.body.classList.remove('fs');
-          btnFs.textContent = '全屏';
-        }
-        fitBoard();
-        setTimeout(() => {
-          chartDays?.resize();
-          chartGain?.resize();
-        }, 120);
+      ['fullscreenchange', 'webkitfullscreenchange', 'MSFullscreenChange'].forEach((ev) => {
+        document.addEventListener(ev, () => applyFsClass(!!nativeFsEl()));
       });
+
+      let wheelLock = false;
+      window.addEventListener('wheel', (e) => {
+        if (!isPresenting()) return;
+        e.preventDefault();
+        if (wheelLock) return;
+        const dy = e.deltaY || e.deltaX;
+        if (Math.abs(dy) < 8) return;
+        wheelLock = true;
+        if (dy > 0) next();
+        else prev();
+        setTimeout(() => { wheelLock = false; }, 420);
+      }, { passive: false });
+
+      function isNavControl(el) {
+        return !!el.closest('button, a, input, textarea, select, .tabs, .lightbox, .fs-exit');
+      }
 
       const caseGallery = {
         design: {
@@ -2033,6 +2082,15 @@
       const caseCompare = document.getElementById('caseCompare');
       const caseOldImg = document.getElementById('caseOldImg');
       const caseNewImg = document.getElementById('caseNewImg');
+
+      const caseWrap = document.getElementById('caseWrap');
+      const caseDrawerClose = document.getElementById('caseDrawerClose');
+      const caseDrawerOpen = document.getElementById('caseDrawerOpen');
+
+      function setCaseDrawer(open) {
+        if (!caseWrap) return;
+        caseWrap.classList.toggle('is-closed', !open);
+      }
 
       function refreshCaseViewer() {
         if (casePageTabs) casePageTabs.style.display = 'flex';
@@ -2062,6 +2120,7 @@
         caseStageTabs.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         caseStage = btn.dataset.stage;
+        if (caseStage === 'compare') setCaseDrawer(false);
         refreshCaseViewer();
       });
 
@@ -2076,27 +2135,18 @@
 
       refreshCaseViewer();
 
-      const caseWrap = document.getElementById('caseWrap');
-      const caseDrawerClose = document.getElementById('caseDrawerClose');
-      const caseDrawerOpen = document.getElementById('caseDrawerOpen');
-
-      function setCaseDrawer(open) {
-        if (!caseWrap) return;
-        caseWrap.classList.toggle('is-closed', !open);
-        if (!open) {
-          caseStage = 'compare';
-          casePage = 'login';
-          caseStageTabs?.querySelectorAll('button').forEach((b) => {
-            b.classList.toggle('active', b.dataset.stage === 'compare');
-          });
-          casePageTabs?.querySelectorAll('button').forEach((b) => {
-            b.classList.toggle('active', b.dataset.page === 'login');
-          });
-          refreshCaseViewer();
-        }
-      }
-
-      caseDrawerClose?.addEventListener('click', () => setCaseDrawer(false));
+      caseDrawerClose?.addEventListener('click', () => {
+        setCaseDrawer(false);
+        caseStage = 'compare';
+        casePage = 'login';
+        caseStageTabs?.querySelectorAll('button').forEach((b) => {
+          b.classList.toggle('active', b.dataset.stage === 'compare');
+        });
+        casePageTabs?.querySelectorAll('button').forEach((b) => {
+          b.classList.toggle('active', b.dataset.page === 'login');
+        });
+        refreshCaseViewer();
+      });
       caseDrawerOpen?.addEventListener('click', () => setCaseDrawer(true));
 
       const defectGallery = {
@@ -2115,6 +2165,12 @@
       });
 
       document.addEventListener('click', (e) => {
+        if (e.target.closest('.lightbox')) return;
+        if (isPresenting()) {
+          if (isNavControl(e.target)) return;
+          next();
+          return;
+        }
         const img = e.target.closest('img[data-zoom]');
         if (!img) return;
         lbImg.src = img.src;
